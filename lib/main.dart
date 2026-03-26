@@ -1,19 +1,6 @@
 // =============================================================================
 // EzzeCV - Offline CV Builder App
-// main.dart — Complete single-file Flutter application
-// =============================================================================
-// Structure:
-//  1. Imports & Main Entry
-//  2. Data Models
-//  3. CV Provider (State Management)
-//  4. App Theme & Constants
-//  5. Home Screen
-//  6. Multi-Step Form Screen
-//  7. Template Selection Screen
-//  8. CV Preview Screen
-//  9. Saved CVs Screen
-// 10. PDF Generation Logic (5 Templates)
-// 11. Shared Widgets & Utilities
+// main.dart — Complete single-file Flutter application (Premium UI Refresh)
 // =============================================================================
 
 import 'dart:io';
@@ -25,8 +12,8 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:convert'; // For JSON encoding/decoding
-import 'package:file_picker/file_picker.dart'; // For the import button
+import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
 
 // =============================================================================
 // SECTION 1 — ENTRY POINT
@@ -46,7 +33,6 @@ void main() {
 // SECTION 2 — DATA MODELS
 // =============================================================================
 
-/// Personal information of the CV owner
 class PersonalInfo {
   String fullName;
   String jobTitle;
@@ -103,7 +89,6 @@ class PersonalInfo {
   }
 }
 
-/// A single work experience entry
 class WorkExperience {
   String company;
   String position;
@@ -142,7 +127,6 @@ class WorkExperience {
   );
 }
 
-/// A single education entry
 class Education {
   String institution;
   String degree;
@@ -181,7 +165,6 @@ class Education {
   );
 }
 
-/// A single project entry
 class Project {
   String name;
   String description;
@@ -212,7 +195,6 @@ class Project {
   );
 }
 
-/// A single certification entry
 class Certification {
   String name;
   String issuer;
@@ -237,10 +219,9 @@ class Certification {
   );
 }
 
-/// Skill model with proficiency level
 class Skill {
   String name;
-  int level; // 1-5
+  int level;
 
   Skill({this.name = '', this.level = 3});
 
@@ -253,17 +234,14 @@ class Skill {
   );
 }
 
-
-/// Saved CV record for the Saved CVs screen
 class SavedCV {
   final String id;
   final String name;
   final String templateName;
   final String savedAt;
-  late final String? filePath; // Made nullable because drafts don't have PDFs yet
-  final bool isDraft; // Flag to identify drafts
+  late final String? filePath;
+  final bool isDraft;
 
-  // The raw data needed to resume editing
   final PersonalInfo personalInfo;
   final List<WorkExperience> workExperiences;
   final List<Education> educations;
@@ -291,7 +269,6 @@ class SavedCV {
   });
 }
 
-/// CV Template model
 class CVTemplate {
   final String id;
   final String name;
@@ -315,7 +292,6 @@ class CVTemplate {
 // =============================================================================
 
 class CVProvider extends ChangeNotifier {
-  // Form data
   PersonalInfo _personalInfo = PersonalInfo();
   List<WorkExperience> _workExperiences = [];
   List<Education> _educations = [];
@@ -324,19 +300,11 @@ class CVProvider extends ChangeNotifier {
   List<Skill> _skills = [];
   List<String> _languages = [];
 
-  // Selected template index (0-4)
   int _selectedTemplateIndex = 0;
-
-  // Current form step
   int _currentStep = 0;
-
-  // Saved CVs list
   List<SavedCV> _savedCVs = [];
-
-  // Dark mode for preview
   bool _previewDarkMode = false;
 
-  // Getters
   PersonalInfo get personalInfo => _personalInfo;
   List<WorkExperience> get workExperiences => _workExperiences;
   List<Education> get educations => _educations;
@@ -351,145 +319,41 @@ class CVProvider extends ChangeNotifier {
 
   CVTemplate get selectedTemplate => AppConstants.templates[_selectedTemplateIndex];
 
-  // --- Personal Info ---
-  void updatePersonalInfo(PersonalInfo info) {
-    _personalInfo = info;
-    notifyListeners();
-  }
+  void updatePersonalInfo(PersonalInfo info) { _personalInfo = info; notifyListeners(); }
+  void addWorkExperience() { _workExperiences.add(WorkExperience()); notifyListeners(); }
+  void updateWorkExperience(int index, WorkExperience exp) { _workExperiences[index] = exp; notifyListeners(); }
+  void removeWorkExperience(int index) { _workExperiences.removeAt(index); notifyListeners(); }
+  void addEducation() { _educations.add(Education()); notifyListeners(); }
+  void updateEducation(int index, Education edu) { _educations[index] = edu; notifyListeners(); }
+  void removeEducation(int index) { _educations.removeAt(index); notifyListeners(); }
+  void addProject() { _projects.add(Project()); notifyListeners(); }
+  void updateProject(int index, Project proj) { _projects[index] = proj; notifyListeners(); }
+  void removeProject(int index) { _projects.removeAt(index); notifyListeners(); }
+  void addCertification() { _certifications.add(Certification()); notifyListeners(); }
+  void updateCertification(int index, Certification cert) { _certifications[index] = cert; notifyListeners(); }
+  void removeCertification(int index) { _certifications.removeAt(index); notifyListeners(); }
+  void addSkill() { _skills.add(Skill()); notifyListeners(); }
+  void updateSkill(int index, Skill skill) { _skills[index] = skill; notifyListeners(); }
+  void removeSkill(int index) { _skills.removeAt(index); notifyListeners(); }
+  void addLanguage(String lang) { if (lang.isNotEmpty) _languages.add(lang); notifyListeners(); }
+  void removeLanguage(int index) { _languages.removeAt(index); notifyListeners(); }
+  void selectTemplate(int index) { _selectedTemplateIndex = index; notifyListeners(); }
+  void setStep(int step) { _currentStep = step; notifyListeners(); }
+  void togglePreviewDarkMode() { _previewDarkMode = !_previewDarkMode; notifyListeners(); }
+  void addSavedCV(SavedCV cv) { _savedCVs.insert(0, cv); notifyListeners(); }
+  void removeSavedCV(String id) { _savedCVs.removeWhere((cv) => cv.id == id); notifyListeners(); }
 
-  // --- Work Experience ---
-  void addWorkExperience() {
-    _workExperiences.add(WorkExperience());
-    notifyListeners();
-  }
-
-  void updateWorkExperience(int index, WorkExperience exp) {
-    _workExperiences[index] = exp;
-    notifyListeners();
-  }
-
-  void removeWorkExperience(int index) {
-    _workExperiences.removeAt(index);
-    notifyListeners();
-  }
-
-  // --- Education ---
-  void addEducation() {
-    _educations.add(Education());
-    notifyListeners();
-  }
-
-  void updateEducation(int index, Education edu) {
-    _educations[index] = edu;
-    notifyListeners();
-  }
-
-  void removeEducation(int index) {
-    _educations.removeAt(index);
-    notifyListeners();
-  }
-
-  // --- Projects ---
-  void addProject() {
-    _projects.add(Project());
-    notifyListeners();
-  }
-
-  void updateProject(int index, Project proj) {
-    _projects[index] = proj;
-    notifyListeners();
-  }
-
-  void removeProject(int index) {
-    _projects.removeAt(index);
-    notifyListeners();
-  }
-
-  // --- Certifications ---
-  void addCertification() {
-    _certifications.add(Certification());
-    notifyListeners();
-  }
-
-  void updateCertification(int index, Certification cert) {
-    _certifications[index] = cert;
-    notifyListeners();
-  }
-
-  void removeCertification(int index) {
-    _certifications.removeAt(index);
-    notifyListeners();
-  }
-
-  // --- Skills ---
-  void addSkill() {
-    _skills.add(Skill());
-    notifyListeners();
-  }
-
-  void updateSkill(int index, Skill skill) {
-    _skills[index] = skill;
-    notifyListeners();
-  }
-
-  void removeSkill(int index) {
-    _skills.removeAt(index);
-    notifyListeners();
-  }
-
-  // --- Languages ---
-  void addLanguage(String lang) {
-    if (lang.isNotEmpty) _languages.add(lang);
-    notifyListeners();
-  }
-
-  void removeLanguage(int index) {
-    _languages.removeAt(index);
-    notifyListeners();
-  }
-
-  // --- Template ---
-  void selectTemplate(int index) {
-    _selectedTemplateIndex = index;
-    notifyListeners();
-  }
-
-  // --- Step ---
-  void setStep(int step) {
-    _currentStep = step;
-    notifyListeners();
-  }
-
-  // --- Preview Theme ---
-  void togglePreviewDarkMode() {
-    _previewDarkMode = !_previewDarkMode;
-    notifyListeners();
-  }
-
-  // --- Saved CVs ---
-  void addSavedCV(SavedCV cv) {
-    _savedCVs.insert(0, cv);
-    notifyListeners();
-  }
-
-  void removeSavedCV(String id) {
-    _savedCVs.removeWhere((cv) => cv.id == id);
-    notifyListeners();
-  }
-  /// Saves the current progress as a draft
   void saveDraft() {
     final dt = DateTime.now();
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     final dateStr = '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
-
     final draft = SavedCV(
       id: dt.millisecondsSinceEpoch.toString(),
       name: _personalInfo.fullName.isNotEmpty ? '${_personalInfo.fullName} (Draft)' : 'Untitled Draft',
       templateName: AppConstants.templates[_selectedTemplateIndex].name,
       savedAt: dateStr,
-      filePath: null, // No PDF generated yet
+      filePath: null,
       isDraft: true,
-      // Deep copy all data to prevent the active form from altering the saved draft
       personalInfo: _personalInfo.copyWith(),
       workExperiences: _workExperiences.map((e) => e.copy()).toList(),
       educations: _educations.map((e) => e.copy()).toList(),
@@ -499,11 +363,9 @@ class CVProvider extends ChangeNotifier {
       languages: List.from(_languages),
       templateIndex: _selectedTemplateIndex,
     );
-
     addSavedCV(draft);
   }
 
-  /// Loads a saved CV (draft or generated) back into the active form for editing
   void loadCV(SavedCV cv) {
     _personalInfo = cv.personalInfo.copyWith();
     _workExperiences = cv.workExperiences.map((e) => e.copy()).toList();
@@ -517,7 +379,6 @@ class CVProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Reset all form data for a fresh CV
   void resetForm() {
     _personalInfo = PersonalInfo();
     _workExperiences = [];
@@ -530,7 +391,7 @@ class CVProvider extends ChangeNotifier {
     _currentStep = 0;
     notifyListeners();
   }
-  /// Exports all current data to a JSON string
+
   String exportToJson() {
     final data = {
       'personalInfo': _personalInfo.toJson(),
@@ -545,38 +406,19 @@ class CVProvider extends ChangeNotifier {
     return jsonEncode(data);
   }
 
-  /// Imports data from a JSON string and updates the form
   void importFromJson(String jsonString) {
     final data = jsonDecode(jsonString);
     _personalInfo = PersonalInfo.fromJson(data['personalInfo'] ?? {});
-
-    _workExperiences = (data['workExperiences'] as List?)
-        ?.map((e) => WorkExperience.fromJson(e))
-        .toList() ?? [];
-
-    _educations = (data['educations'] as List?)
-        ?.map((e) => Education.fromJson(e))
-        .toList() ?? [];
-
-    _projects = (data['projects'] as List?)
-        ?.map((e) => Project.fromJson(e))
-        .toList() ?? [];
-
-    _certifications = (data['certifications'] as List?)
-        ?.map((e) => Certification.fromJson(e))
-        .toList() ?? [];
-
-    _skills = (data['skills'] as List?)
-        ?.map((e) => Skill.fromJson(e))
-        .toList() ?? [];
-
+    _workExperiences = (data['workExperiences'] as List?)?.map((e) => WorkExperience.fromJson(e)).toList() ?? [];
+    _educations = (data['educations'] as List?)?.map((e) => Education.fromJson(e)).toList() ?? [];
+    _projects = (data['projects'] as List?)?.map((e) => Project.fromJson(e)).toList() ?? [];
+    _certifications = (data['certifications'] as List?)?.map((e) => Certification.fromJson(e)).toList() ?? [];
+    _skills = (data['skills'] as List?)?.map((e) => Skill.fromJson(e)).toList() ?? [];
     _languages = List<String>.from(data['languages'] ?? []);
     _selectedTemplateIndex = data['templateIndex'] ?? 0;
     _currentStep = 0;
-
     notifyListeners();
   }
-
 }
 
 // =============================================================================
@@ -587,51 +429,49 @@ class AppConstants {
   static const String appName = 'EzzeCV';
   static const String appTagline = 'Build Your Career Story';
 
-  /// The 5 built-in CV templates
   static const List<CVTemplate> templates = [
     CVTemplate(
       id: 'classic_ats',
-      name: 'Executive ATS', // Harvard-style, strict B&W
+      name: 'Executive ATS',
       description: 'Strictly black & white, highly optimized for corporate ATS.',
-      primaryColor: Color(0xFF212121), // Charcoal
+      primaryColor: Color(0xFF212121),
       accentColor: Color(0xFF424242),
       icon: Icons.article_outlined,
     ),
     CVTemplate(
       id: 'modern_clean',
-      name: 'Corporate Modern', // Light gray sidebar, dark text
+      name: 'Corporate Modern',
       description: 'Clean two-column layout with elegant typography.',
-      primaryColor: Color(0xFF2C3E50), // Navy/Slate
+      primaryColor: Color(0xFF2C3E50),
       accentColor: Color(0xFF34495E),
       icon: Icons.view_sidebar_outlined,
     ),
     CVTemplate(
       id: 'student_fresher',
-      name: 'Academic Standard', // Clean navy accents, education first
+      name: 'Academic Standard',
       description: 'Structured hierarchy ideal for graduates and academia.',
-      primaryColor: Color(0xFF1B365D), // Classic Oxford Blue
+      primaryColor: Color(0xFF1B365D),
       accentColor: Color(0xFF335280),
       icon: Icons.school_outlined,
     ),
     CVTemplate(
       id: 'hybrid',
-      name: 'Tech Minimalist', // Clean matrix, dark gray
+      name: 'Tech Minimalist',
       description: 'Grid-based layout emphasizing technical skills.',
-      primaryColor: Color(0xFF37474F), // Blue Grey
+      primaryColor: Color(0xFF37474F),
       accentColor: Color(0xFF546E7A),
       icon: Icons.grid_view_rounded,
     ),
     CVTemplate(
       id: 'one_page',
-      name: 'Managerial Compact', // Dense but readable, steel blue
+      name: 'Managerial Compact',
       description: 'Space-efficient executive layout.',
-      primaryColor: Color(0xFF455A64), // Steel
+      primaryColor: Color(0xFF455A64),
       accentColor: Color(0xFF607D8B),
       icon: Icons.view_agenda_outlined,
     ),
   ];
 
-  // Form steps
   static const List<String> formSteps = [
     'Personal Info',
     'Experience',
@@ -643,14 +483,30 @@ class AppConstants {
 }
 
 class AppTheme {
-  static const Color primaryDark = Color(0xFF0D1B2A);
-  static const Color primaryBlue = Color(0xFF1565C0);
-  static const Color accentGold = Color(0xFFFFC107);
-  static const Color surfaceColor = Color(0xFFF8F9FA);
-  static const Color cardColor = Colors.white;
-  static const Color textPrimary = Color(0xFF1A1A2E);
-  static const Color textSecondary = Color(0xFF6C757D);
-  static const Color dividerColor = Color(0xFFE9ECEF);
+  // Premium dark navy palette
+  static const Color bgDeep = Color(0xFF0A0F1E);
+  static const Color bgMid = Color(0xFF111827);
+  static const Color bgSurface = Color(0xFFF5F7FA);
+  static const Color bgCard = Colors.white;
+
+  static const Color accentCyan = Color(0xFF06B6D4);
+  static const Color accentCyanLight = Color(0xFF67E8F9);
+  static const Color accentGold = Color(0xFFF59E0B);
+  static const Color accentGoldLight = Color(0xFFFCD34D);
+
+  static const Color primaryBlue = Color(0xFF2563EB);
+  static const Color primaryBlueDark = Color(0xFF1D4ED8);
+  static const Color primaryBlueLight = Color(0xFF60A5FA);
+
+  static const Color textPrimary = Color(0xFF0F172A);
+  static const Color textSecondary = Color(0xFF64748B);
+  static const Color textMuted = Color(0xFF94A3B8);
+  static const Color divider = Color(0xFFE2E8F0);
+
+  // Gradient stops
+  static const Color grad1 = Color(0xFF0A0F1E);
+  static const Color grad2 = Color(0xFF0D1A3A);
+  static const Color grad3 = Color(0xFF0A1628);
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -659,32 +515,40 @@ class AppTheme {
         seedColor: primaryBlue,
         brightness: Brightness.light,
       ),
-      scaffoldBackgroundColor: surfaceColor,
+      scaffoldBackgroundColor: bgSurface,
       appBarTheme: const AppBarTheme(
-        backgroundColor: primaryDark,
+        backgroundColor: bgDeep,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
           color: Colors.white,
-          fontSize: 20,
+          fontSize: 18,
           fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
+          letterSpacing: 0.3,
+        ),
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
         ),
       ),
       cardTheme: CardThemeData(
-        color: cardColor,
-        elevation: 2,
-        shadowColor: Colors.black12,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        color: bgCard,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: divider, width: 1),
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryBlue,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.2),
+          elevation: 0,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -692,26 +556,27 @@ class AppTheme {
           foregroundColor: primaryBlue,
           side: const BorderSide(color: primaryBlue, width: 1.5),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.2),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: const Color(0xFFF8FAFC),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: dividerColor),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: divider),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: dividerColor),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: divider),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: primaryBlue, width: 2),
         ),
-        labelStyle: const TextStyle(color: textSecondary, fontSize: 14),
+        labelStyle: const TextStyle(color: textSecondary, fontSize: 13, fontWeight: FontWeight.w500),
+        hintStyle: const TextStyle(color: textMuted, fontSize: 13),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
@@ -748,39 +613,35 @@ class HomeScreen extends StatelessWidget {
     final savedCVs = context.watch<CVProvider>().savedCVs;
 
     return Scaffold(
-      backgroundColor: AppTheme.primaryDark,
+      backgroundColor: AppTheme.bgDeep,
       body: SafeArea(
         child: Column(
           children: [
-            // ---- Hero Header ----
             _buildHeader(context),
-
-            // ---- Main Content ----
             Expanded(
               child: Container(
                 decoration: const BoxDecoration(
-                  color: AppTheme.surfaceColor,
+                  color: AppTheme.bgSurface,
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(28),
-                    topRight: Radius.circular(28),
+                    topLeft: Radius.circular(32),
+                    topRight: Radius.circular(32),
                   ),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.fromLTRB(20, 28, 20, 32),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 8),
                       _buildQuickActions(context),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 36),
                       _buildTemplatesPreview(context),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 36),
                       if (savedCVs.isNotEmpty) ...[
                         _buildSavedCVsSection(context, savedCVs),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 28),
                       ],
                       _buildTipsCard(),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -794,7 +655,7 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -804,81 +665,87 @@ class HomeScreen extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(9),
                     decoration: BoxDecoration(
-                      color: AppTheme.accentGold,
-                      borderRadius: BorderRadius.circular(10),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFF59E0B), Color(0xFFFCD34D)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(Icons.description_rounded,
-                        color: AppTheme.primaryDark, size: 22),
+                        color: Color(0xFF0A0F1E), size: 20),
                   ),
                   const SizedBox(width: 10),
                   const Text(
                     'EzzeCV',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 26,
+                      fontSize: 24,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.5,
                     ),
                   ),
                 ],
               ),
-              IconButton(
-                onPressed: () async {
-                  try {
-                    // 1. Open File Picker restricted to .json files
-                    FilePickerResult? result = await FilePicker.platform.pickFiles(
-                      type: FileType.custom,
-                      allowedExtensions: ['json'],
-                    );
-
-                    if (result != null && result.files.single.path != null) {
-                      // 2. Read the file
-                      File file = File(result.files.single.path!);
-                      String jsonString = await file.readAsString();
-
-                      // 3. Load it into the Provider
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withOpacity(0.12)),
+                ),
+                child: IconButton(
+                  onPressed: () async {
+                    try {
+                      FilePickerResult? result = await FilePicker.platform.pickFiles(
+                        type: FileType.custom,
+                        allowedExtensions: ['json'],
+                      );
+                      if (result != null && result.files.single.path != null) {
+                        File file = File(result.files.single.path!);
+                        String jsonString = await file.readAsString();
+                        if (context.mounted) {
+                          context.read<CVProvider>().importFromJson(jsonString);
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen()));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('CV Imported Successfully!'), backgroundColor: Colors.green),
+                          );
+                        }
+                      }
+                    } catch (e) {
                       if (context.mounted) {
-                        context.read<CVProvider>().importFromJson(jsonString);
-
-                        // 4. Navigate straight to the Form to edit
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const FormScreen()),
-                        );
-
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('CV Imported Successfully!'), backgroundColor: Colors.green),
+                          const SnackBar(content: Text('Failed to import file. Make sure it is a valid EzzeCV .json backup.'), backgroundColor: Colors.red),
                         );
                       }
                     }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Failed to import file. Make sure it is a valid EzzeCV .json backup.'), backgroundColor: Colors.red),
-                      );
-                    }
-                  }
-                },
-                icon: const Icon(Icons.file_upload_outlined, color: Colors.white70),
-                tooltip: 'Import CV (.json)',
+                  },
+                  icon: const Icon(Icons.file_upload_outlined, color: Colors.white70, size: 20),
+                  tooltip: 'Import CV (.json)',
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 22),
           const Text(
-            'Build Your Career Story',
+            'Build Your\nCareer Story',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              height: 1.2,
+              letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 6),
-          const Text(
-            'Create professional CVs with ATS-friendly templates — 100% offline.',
-            style: TextStyle(color: Colors.white60, fontSize: 14, height: 1.4),
+          const SizedBox(height: 8),
+          Text(
+            'Create professional CVs with ATS-friendly\ntemplates — 100% offline.',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.55),
+              fontSize: 13,
+              height: 1.6,
+            ),
           ),
         ],
       ),
@@ -889,11 +756,7 @@ class HomeScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Get Started',
-            style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimary)),
+        _SectionLabel(label: 'GET STARTED'),
         const SizedBox(height: 14),
         Row(
           children: [
@@ -901,13 +764,15 @@ class HomeScreen extends StatelessWidget {
               child: _ActionCard(
                 icon: Icons.add_circle_outline_rounded,
                 label: 'Create New CV',
-                color: AppTheme.primaryBlue,
+                subtitle: 'Start from scratch',
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 onTap: () {
                   context.read<CVProvider>().resetForm();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const FormScreen()),
-                  );
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen()));
                 },
               ),
             ),
@@ -916,7 +781,12 @@ class HomeScreen extends StatelessWidget {
               child: _ActionCard(
                 icon: Icons.folder_open_rounded,
                 label: 'Saved CVs',
-                color: const Color(0xFF00695C),
+                subtitle: 'View your history',
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0891B2), Color(0xFF0E7490)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const SavedCVsScreen()),
@@ -936,30 +806,37 @@ class HomeScreen extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Templates',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary)),
-            TextButton(
-              onPressed: () {
+            _SectionLabel(label: 'TEMPLATES'),
+            GestureDetector(
+              onTap: () {
                 context.read<CVProvider>().resetForm();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const TemplateSelectionScreen()),
-                );
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const TemplateSelectionScreen()));
               },
-              child: const Text('See All'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryBlue.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'See All',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.primaryBlue,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         SizedBox(
-          height: 130,
+          height: 138,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: AppConstants.templates.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
               final template = AppConstants.templates[index];
               return _MiniTemplateCard(template: template, index: index);
@@ -974,12 +851,8 @@ class HomeScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Recent CVs',
-            style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.textPrimary)),
-        const SizedBox(height: 12),
+        _SectionLabel(label: 'RECENT CVs'),
+        const SizedBox(height: 14),
         ...savedCVs.take(3).map((cv) => _SavedCVTile(cv: cv)),
       ],
     );
@@ -987,19 +860,29 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildTipsCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFFFFF8E1), Color(0xFFFFF3CD)],
+          colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFFE082)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFCD34D).withOpacity(0.5)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.lightbulb_outline_rounded,
-              color: Color(0xFFF57F17), size: 22),
-          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF59E0B).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.lightbulb_outline_rounded,
+                color: Color(0xFFF59E0B), size: 18),
+          ),
+          const SizedBox(width: 14),
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1007,15 +890,15 @@ class HomeScreen extends StatelessWidget {
                 Text('Pro Tip',
                     style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFFF57F17),
+                        color: Color(0xFFB45309),
                         fontSize: 13)),
-                SizedBox(height: 3),
+                SizedBox(height: 4),
                 Text(
                   'Use the Classic ATS template when applying to large companies — it ensures your CV passes automated screening systems.',
                   style: TextStyle(
-                      color: Color(0xFF795548),
+                      color: Color(0xFF92400E),
                       fontSize: 12,
-                      height: 1.4),
+                      height: 1.5),
                 ),
               ],
             ),
@@ -1026,30 +909,55 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  const _SectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: const TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        color: AppTheme.textMuted,
+        letterSpacing: 1.4,
+      ),
+    );
+  }
+}
+
 class _ActionCard extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color color;
+  final String subtitle;
+  final LinearGradient gradient;
   final VoidCallback onTap;
 
   const _ActionCard({
     required this.icon,
     required this.label,
-    required this.color,
+    required this.subtitle,
+    required this.gradient,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.2)),
+          gradient: gradient,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: gradient.colors.first.withOpacity(0.25),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1057,17 +965,23 @@ class _ActionCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color,
+                color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: Colors.white, size: 20),
+              child: Icon(icon, color: Colors.white, size: 18),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
             Text(label,
-                style: TextStyle(
-                    color: color,
+                style: const TextStyle(
+                    color: Colors.white,
                     fontWeight: FontWeight.w700,
-                    fontSize: 13)),
+                    fontSize: 13,
+                    letterSpacing: 0.1)),
+            const SizedBox(height: 2),
+            Text(subtitle,
+                style: TextStyle(
+                    color: Colors.white.withOpacity(0.65),
+                    fontSize: 11)),
           ],
         ),
       ),
@@ -1083,28 +997,24 @@ class _MiniTemplateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: () {
         context.read<CVProvider>()
           ..resetForm()
           ..selectTemplate(index);
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const FormScreen()),
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen()));
       },
-      borderRadius: BorderRadius.circular(12),
       child: Container(
-        width: 110,
+        width: 108,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: template.primaryColor.withOpacity(0.3)),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.divider),
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: template.primaryColor.withOpacity(0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -1112,22 +1022,25 @@ class _MiniTemplateCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(11),
               decoration: BoxDecoration(
-                color: template.primaryColor.withOpacity(0.1),
+                color: template.primaryColor.withOpacity(0.08),
                 shape: BoxShape.circle,
               ),
-              child:
-              Icon(template.icon, color: template.primaryColor, size: 24),
+              child: Icon(template.icon, color: template.primaryColor, size: 22),
             ),
-            const SizedBox(height: 8),
-            Text(
-              template.name,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: template.primaryColor,
+            const SizedBox(height: 9),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                template.name,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: template.primaryColor,
+                  height: 1.3,
+                ),
               ),
             ),
           ],
@@ -1143,32 +1056,46 @@ class _SavedCVTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.divider),
+      ),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: AppTheme.primaryBlue,
-          // Show a different icon if it's a draft
-          child: Icon(cv.isDraft ? Icons.edit_document : Icons.description, color: Colors.white, size: 20),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: cv.isDraft
+                ? AppTheme.accentGold.withOpacity(0.12)
+                : AppTheme.primaryBlue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            cv.isDraft ? Icons.edit_document : Icons.description,
+            color: cv.isDraft ? AppTheme.accentGold : AppTheme.primaryBlue,
+            size: 18,
+          ),
         ),
         title: Text(cv.name,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+            style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: AppTheme.textPrimary)),
         subtitle: Text(
-          cv.isDraft
-              ? 'Draft-${cv.savedAt}'
-              : '${cv.templateName}-${cv.savedAt}',
+          cv.isDraft ? 'Draft · ${cv.savedAt}' : '${cv.templateName} · ${cv.savedAt}',
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 11,
             color: cv.isDraft ? AppTheme.accentGold : AppTheme.textSecondary,
             fontWeight: cv.isDraft ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
         trailing: cv.filePath != null
-        // If it has a PDF file, show the Share button
-            ? IconButton(
-          icon: const Icon(Icons.share_outlined, size: 20),
-          onPressed: () async {
-            // The exclamation mark (!) tells Dart we know it's not null here
+            ? GestureDetector(
+          onTap: () async {
             final file = File(cv.filePath!);
             if (await file.exists()) {
               await Printing.sharePdf(bytes: await file.readAsBytes(), filename: '${cv.name}.pdf');
@@ -1178,15 +1105,28 @@ class _SavedCVTile extends StatelessWidget {
               );
             }
           },
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryBlue.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.share_outlined, size: 16, color: AppTheme.primaryBlue),
+          ),
         )
-        // If it's a draft (no PDF), show a quick Edit button instead
-            : IconButton(
-          icon: const Icon(Icons.edit, size: 20, color: AppTheme.primaryBlue),
-          tooltip: 'Resume Editing',
-          onPressed: () {
+            : GestureDetector(
+          onTap: () {
             context.read<CVProvider>().loadCV(cv);
             Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen()));
           },
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.accentGold.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.edit, size: 16, color: AppTheme.accentGold),
+          ),
         ),
       ),
     );
@@ -1222,11 +1162,7 @@ class _FormScreenState extends State<FormScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      // Go to template selection
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const TemplateSelectionScreen()),
-      );
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const TemplateSelectionScreen()));
     }
   }
 
@@ -1250,10 +1186,12 @@ class _FormScreenState extends State<FormScreen> {
     final totalSteps = AppConstants.formSteps.length;
 
     return Scaffold(
+      backgroundColor: AppTheme.bgSurface,
       appBar: AppBar(
         title: const Text('Build Your CV'),
+        backgroundColor: AppTheme.bgDeep,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded),
+          icon: const Icon(Icons.arrow_back_ios_rounded, size: 18),
           onPressed: _prevStep,
         ),
         actions: [
@@ -1262,49 +1200,15 @@ class _FormScreenState extends State<FormScreen> {
               context,
               MaterialPageRoute(builder: (_) => const TemplateSelectionScreen()),
             ),
-            child: const Text('Skip to Templates',
-                style: TextStyle(color: Colors.white70, fontSize: 12)),
+            child: Text('Skip to Templates',
+                style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 12)),
           ),
         ],
       ),
       body: Column(
         children: [
-          // Progress Bar
           _StepProgressBar(current: step, total: totalSteps),
-
-          // Step Label
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryBlue,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'Step ${step + 1} of $totalSteps',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  AppConstants.formSteps[step],
-                  style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary),
-                ),
-              ],
-            ),
-          ),
-
-          // Form Pages
+          _StepLabelBar(step: step, total: totalSteps),
           Expanded(
             child: PageView(
               controller: _pageController,
@@ -1319,13 +1223,52 @@ class _FormScreenState extends State<FormScreen> {
               ],
             ),
           ),
-
-          // Navigation Buttons
           _FormNavBar(
             onBack: _prevStep,
             onNext: _nextStep,
             isLastStep: step == totalSteps - 1,
             isFirstStep: step == 0,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepLabelBar extends StatelessWidget {
+  final int step;
+  final int total;
+  const _StepLabelBar({required this.step, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryBlue,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'Step ${step + 1} of $total',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            AppConstants.formSteps[step],
+            style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary),
           ),
         ],
       ),
@@ -1342,7 +1285,7 @@ class _StepProgressBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
       child: Row(
         children: List.generate(total, (index) {
           final isCompleted = index < current;
@@ -1353,11 +1296,13 @@ class _StepProgressBar extends StatelessWidget {
                 Expanded(
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
-                    height: 4,
+                    height: 3,
                     decoration: BoxDecoration(
-                      color: isCompleted || isCurrent
+                      color: isCompleted
                           ? AppTheme.primaryBlue
-                          : AppTheme.dividerColor,
+                          : isCurrent
+                          ? AppTheme.accentCyan
+                          : AppTheme.divider,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -1388,17 +1333,17 @@ class _FormNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 22),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: AppTheme.dividerColor)),
+        border: Border(top: BorderSide(color: AppTheme.divider)),
       ),
       child: Row(
         children: [
           if (!isFirstStep)
             OutlinedButton.icon(
               onPressed: onBack,
-              icon: const Icon(Icons.arrow_back, size: 18),
+              icon: const Icon(Icons.arrow_back, size: 16),
               label: const Text('Back'),
             ),
           const Spacer(),
@@ -1406,7 +1351,7 @@ class _FormNavBar extends StatelessWidget {
             onPressed: onNext,
             icon: Icon(
                 isLastStep ? Icons.palette_outlined : Icons.arrow_forward,
-                size: 18),
+                size: 16),
             label: Text(isLastStep ? 'Choose Template' : 'Continue'),
           ),
         ],
@@ -1453,19 +1398,13 @@ class _PersonalInfoStepState extends State<PersonalInfoStep> {
             label: 'Full Name *',
             hint: 'e.g. Sarah Johnson',
             initialValue: _info.fullName,
-            onChanged: (v) {
-              _info.fullName = v;
-              _update();
-            },
+            onChanged: (v) { _info.fullName = v; _update(); },
           ),
           _FormField(
             label: 'Job Title / Role *',
             hint: 'e.g. Senior Software Engineer',
             initialValue: _info.jobTitle,
-            onChanged: (v) {
-              _info.jobTitle = v;
-              _update();
-            },
+            onChanged: (v) { _info.jobTitle = v; _update(); },
           ),
           Row(
             children: [
@@ -1475,10 +1414,7 @@ class _PersonalInfoStepState extends State<PersonalInfoStep> {
                   hint: 'email@example.com',
                   initialValue: _info.email,
                   keyboardType: TextInputType.emailAddress,
-                  onChanged: (v) {
-                    _info.email = v;
-                    _update();
-                  },
+                  onChanged: (v) { _info.email = v; _update(); },
                 ),
               ),
               const SizedBox(width: 12),
@@ -1488,10 +1424,7 @@ class _PersonalInfoStepState extends State<PersonalInfoStep> {
                   hint: '+1 234 567 8900',
                   initialValue: _info.phone,
                   keyboardType: TextInputType.phone,
-                  onChanged: (v) {
-                    _info.phone = v;
-                    _update();
-                  },
+                  onChanged: (v) { _info.phone = v; _update(); },
                 ),
               ),
             ],
@@ -1500,10 +1433,7 @@ class _PersonalInfoStepState extends State<PersonalInfoStep> {
             label: 'Location',
             hint: 'City, Country',
             initialValue: _info.location,
-            onChanged: (v) {
-              _info.location = v;
-              _update();
-            },
+            onChanged: (v) { _info.location = v; _update(); },
           ),
           Row(
             children: [
@@ -1512,10 +1442,7 @@ class _PersonalInfoStepState extends State<PersonalInfoStep> {
                   label: 'LinkedIn',
                   hint: 'linkedin.com/in/...',
                   initialValue: _info.linkedin,
-                  onChanged: (v) {
-                    _info.linkedin = v;
-                    _update();
-                  },
+                  onChanged: (v) { _info.linkedin = v; _update(); },
                 ),
               ),
               const SizedBox(width: 12),
@@ -1524,24 +1451,17 @@ class _PersonalInfoStepState extends State<PersonalInfoStep> {
                   label: 'Website / Portfolio',
                   hint: 'yourwebsite.com',
                   initialValue: _info.website,
-                  onChanged: (v) {
-                    _info.website = v;
-                    _update();
-                  },
+                  onChanged: (v) { _info.website = v; _update(); },
                 ),
               ),
             ],
           ),
           _FormField(
             label: 'Professional Summary',
-            hint:
-            'A brief 2-3 sentence overview of your professional background and key strengths...',
+            hint: 'A brief 2-3 sentence overview of your professional background and key strengths...',
             initialValue: _info.summary,
             maxLines: 4,
-            onChanged: (v) {
-              _info.summary = v;
-              _update();
-            },
+            onChanged: (v) { _info.summary = v; _update(); },
           ),
         ],
       ),
@@ -1568,17 +1488,14 @@ class WorkExperienceStep extends StatelessWidget {
             subtitle: 'Add your professional history',
           ),
           const SizedBox(height: 20),
-          ...exps.asMap().entries.map(
-                (entry) => _WorkExpCard(
-              index: entry.key,
-              experience: entry.value,
-            ),
-          ),
+          ...exps.asMap().entries.map((entry) => _WorkExpCard(
+            index: entry.key,
+            experience: entry.value,
+          )),
           const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () => provider.addWorkExperience(),
-            icon: const Icon(Icons.add_circle_outline),
-            label: const Text('Add Work Experience'),
+          _AddButton(
+            label: 'Add Work Experience',
+            onTap: () => provider.addWorkExperience(),
           ),
           if (exps.isEmpty)
             const Padding(
@@ -1625,10 +1542,7 @@ class _WorkExpCardState extends State<_WorkExpCard> {
                   label: 'Company',
                   hint: 'Company Name',
                   initialValue: exp.company,
-                  onChanged: (v) {
-                    exp.company = v;
-                    context.read<CVProvider>().updateWorkExperience(widget.index, exp);
-                  },
+                  onChanged: (v) { exp.company = v; context.read<CVProvider>().updateWorkExperience(widget.index, exp); },
                 ),
               ),
               const SizedBox(width: 12),
@@ -1637,10 +1551,7 @@ class _WorkExpCardState extends State<_WorkExpCard> {
                   label: 'Position',
                   hint: 'Your Job Title',
                   initialValue: exp.position,
-                  onChanged: (v) {
-                    exp.position = v;
-                    context.read<CVProvider>().updateWorkExperience(widget.index, exp);
-                  },
+                  onChanged: (v) { exp.position = v; context.read<CVProvider>().updateWorkExperience(widget.index, exp); },
                 ),
               ),
             ],
@@ -1652,10 +1563,7 @@ class _WorkExpCardState extends State<_WorkExpCard> {
                   label: 'Start Date',
                   hint: 'Jan 2022',
                   initialValue: exp.startDate,
-                  onChanged: (v) {
-                    exp.startDate = v;
-                    context.read<CVProvider>().updateWorkExperience(widget.index, exp);
-                  },
+                  onChanged: (v) { exp.startDate = v; context.read<CVProvider>().updateWorkExperience(widget.index, exp); },
                 ),
               ),
               const SizedBox(width: 12),
@@ -1672,10 +1580,7 @@ class _WorkExpCardState extends State<_WorkExpCard> {
                   label: 'End Date',
                   hint: 'Dec 2023',
                   initialValue: exp.endDate,
-                  onChanged: (v) {
-                    exp.endDate = v;
-                    context.read<CVProvider>().updateWorkExperience(widget.index, exp);
-                  },
+                  onChanged: (v) { exp.endDate = v; context.read<CVProvider>().updateWorkExperience(widget.index, exp); },
                 ),
               ),
             ],
@@ -1686,20 +1591,15 @@ class _WorkExpCardState extends State<_WorkExpCard> {
             value: exp.isCurrentJob,
             dense: true,
             contentPadding: EdgeInsets.zero,
-            onChanged: (v) {
-              exp.isCurrentJob = v;
-              context.read<CVProvider>().updateWorkExperience(widget.index, exp);
-            },
+            activeColor: AppTheme.primaryBlue,
+            onChanged: (v) { exp.isCurrentJob = v; context.read<CVProvider>().updateWorkExperience(widget.index, exp); },
           ),
           _FormField(
             label: 'Key Responsibilities & Achievements',
             hint: '- Led a team of 5 engineers\n- Increased performance by 40%\n- Launched 3 major features',
             initialValue: exp.description,
             maxLines: 4,
-            onChanged: (v) {
-              exp.description = v;
-              context.read<CVProvider>().updateWorkExperience(widget.index, exp);
-            },
+            onChanged: (v) { exp.description = v; context.read<CVProvider>().updateWorkExperience(widget.index, exp); },
           ),
         ],
       ),
@@ -1726,15 +1626,9 @@ class EducationStep extends StatelessWidget {
             subtitle: 'Add your academic background',
           ),
           const SizedBox(height: 20),
-          ...edus.asMap().entries.map(
-                (e) => _EducationCard(index: e.key, education: e.value),
-          ),
+          ...edus.asMap().entries.map((e) => _EducationCard(index: e.key, education: e.value)),
           const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () => provider.addEducation(),
-            icon: const Icon(Icons.add_circle_outline),
-            label: const Text('Add Education'),
-          ),
+          _AddButton(label: 'Add Education', onTap: () => provider.addEducation()),
           if (edus.isEmpty)
             const Padding(
               padding: EdgeInsets.all(24),
@@ -1777,10 +1671,7 @@ class _EducationCardState extends State<_EducationCard> {
             label: 'Institution',
             hint: 'University / College Name',
             initialValue: edu.institution,
-            onChanged: (v) {
-              edu.institution = v;
-              context.read<CVProvider>().updateEducation(widget.index, edu);
-            },
+            onChanged: (v) { edu.institution = v; context.read<CVProvider>().updateEducation(widget.index, edu); },
           ),
           Row(
             children: [
@@ -1789,10 +1680,7 @@ class _EducationCardState extends State<_EducationCard> {
                   label: 'Degree',
                   hint: 'B.Sc. / M.Sc. / MBA',
                   initialValue: edu.degree,
-                  onChanged: (v) {
-                    edu.degree = v;
-                    context.read<CVProvider>().updateEducation(widget.index, edu);
-                  },
+                  onChanged: (v) { edu.degree = v; context.read<CVProvider>().updateEducation(widget.index, edu); },
                 ),
               ),
               const SizedBox(width: 12),
@@ -1801,10 +1689,7 @@ class _EducationCardState extends State<_EducationCard> {
                   label: 'Field of Study',
                   hint: 'Computer Science',
                   initialValue: edu.field,
-                  onChanged: (v) {
-                    edu.field = v;
-                    context.read<CVProvider>().updateEducation(widget.index, edu);
-                  },
+                  onChanged: (v) { edu.field = v; context.read<CVProvider>().updateEducation(widget.index, edu); },
                 ),
               ),
             ],
@@ -1816,10 +1701,7 @@ class _EducationCardState extends State<_EducationCard> {
                   label: 'Start Year',
                   hint: '2018',
                   initialValue: edu.startYear,
-                  onChanged: (v) {
-                    edu.startYear = v;
-                    context.read<CVProvider>().updateEducation(widget.index, edu);
-                  },
+                  onChanged: (v) { edu.startYear = v; context.read<CVProvider>().updateEducation(widget.index, edu); },
                 ),
               ),
               const SizedBox(width: 12),
@@ -1828,10 +1710,7 @@ class _EducationCardState extends State<_EducationCard> {
                   label: 'End Year',
                   hint: '2022',
                   initialValue: edu.endYear,
-                  onChanged: (v) {
-                    edu.endYear = v;
-                    context.read<CVProvider>().updateEducation(widget.index, edu);
-                  },
+                  onChanged: (v) { edu.endYear = v; context.read<CVProvider>().updateEducation(widget.index, edu); },
                 ),
               ),
               const SizedBox(width: 12),
@@ -1840,10 +1719,7 @@ class _EducationCardState extends State<_EducationCard> {
                   label: 'Grade / GPA',
                   hint: '3.8 / 4.0',
                   initialValue: edu.grade,
-                  onChanged: (v) {
-                    edu.grade = v;
-                    context.read<CVProvider>().updateEducation(widget.index, edu);
-                  },
+                  onChanged: (v) { edu.grade = v; context.read<CVProvider>().updateEducation(widget.index, edu); },
                 ),
               ),
             ],
@@ -1887,39 +1763,39 @@ class _SkillsStepState extends State<SkillsStep> {
           ),
           const SizedBox(height: 20),
 
-          // Skills
           const Text('Technical & Soft Skills',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.textPrimary)),
           const SizedBox(height: 12),
-          ...provider.skills.asMap().entries.map(
-                (e) => _SkillRow(index: e.key, skill: e.value),
-          ),
+          ...provider.skills.asMap().entries.map((e) => _SkillRow(index: e.key, skill: e.value)),
           const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: () => provider.addSkill(),
-            icon: const Icon(Icons.add_circle_outline, size: 18),
-            label: const Text('Add Skill'),
-          ),
+          _AddButton(label: 'Add Skill', onTap: () => provider.addSkill()),
 
           const SizedBox(height: 24),
-          const Divider(),
+          const Divider(color: AppTheme.divider),
           const SizedBox(height: 16),
 
-          // Languages
           const Text('Languages',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.textPrimary)),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              ...provider.languages.asMap().entries.map(
-                    (e) => Chip(
-                  label: Text(e.value),
-                  deleteIcon: const Icon(Icons.close, size: 16),
-                  onDeleted: () => provider.removeLanguage(e.key),
+              ...provider.languages.asMap().entries.map((e) => Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryBlue.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.2)),
                 ),
-              ),
+                child: Chip(
+                  label: Text(e.value,
+                      style: const TextStyle(fontSize: 12, color: AppTheme.primaryBlue, fontWeight: FontWeight.w500)),
+                  deleteIcon: const Icon(Icons.close, size: 14, color: AppTheme.primaryBlue),
+                  onDeleted: () => provider.removeLanguage(e.key),
+                  backgroundColor: Colors.transparent,
+                  side: BorderSide.none,
+                ),
+              )),
             ],
           ),
           const SizedBox(height: 12),
@@ -1941,8 +1817,7 @@ class _SkillsStepState extends State<SkillsStep> {
                   _langController.clear();
                 },
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 ),
                 child: const Icon(Icons.add),
               ),
@@ -1970,32 +1845,39 @@ class _SkillRowState extends State<_SkillRow> {
   @override
   void initState() {
     super.initState();
-    // Initialize the controller only once
     _controller = TextEditingController(text: widget.skill.name);
   }
 
   @override
   void dispose() {
-    // Always dispose controllers to prevent memory leaks
     _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.divider),
+      ),
       child: Row(
         children: [
           Expanded(
             flex: 3,
             child: TextField(
-              controller: _controller, // Use the stateful controller here
+              controller: _controller,
               decoration: const InputDecoration(
                 hintText: 'Skill name (e.g. Python)',
-                contentPadding:
-                EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 isDense: true,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
               ),
               onChanged: (v) {
                 widget.skill.name = v;
@@ -2003,8 +1885,7 @@ class _SkillRowState extends State<_SkillRow> {
               },
             ),
           ),
-          const SizedBox(width: 10),
-          // Skill level 1-5
+          const SizedBox(width: 8),
           Row(
             children: List.generate(5, (i) {
               final filled = i < widget.skill.level;
@@ -2014,23 +1895,28 @@ class _SkillRowState extends State<_SkillRow> {
                   context.read<CVProvider>().updateSkill(widget.index, widget.skill);
                 },
                 child: Container(
-                  width: 18,
-                  height: 18,
+                  width: 16,
+                  height: 16,
                   margin: const EdgeInsets.symmetric(horizontal: 2),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: filled ? AppTheme.primaryBlue : AppTheme.dividerColor,
+                    color: filled ? AppTheme.primaryBlue : AppTheme.divider,
                   ),
                 ),
               );
             }),
           ),
           const SizedBox(width: 6),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-            onPressed: () => context.read<CVProvider>().removeSkill(widget.index),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+          GestureDetector(
+            onTap: () => context.read<CVProvider>().removeSkill(widget.index),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -2057,15 +1943,9 @@ class ProjectsStep extends StatelessWidget {
             subtitle: 'Showcase your work',
           ),
           const SizedBox(height: 20),
-          ...projects.asMap().entries.map(
-                (e) => _ProjectCard(index: e.key, project: e.value),
-          ),
+          ...projects.asMap().entries.map((e) => _ProjectCard(index: e.key, project: e.value)),
           const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () => provider.addProject(),
-            icon: const Icon(Icons.add_circle_outline),
-            label: const Text('Add Project'),
-          ),
+          _AddButton(label: 'Add Project', onTap: () => provider.addProject()),
           if (projects.isEmpty)
             const Padding(
               padding: EdgeInsets.all(24),
@@ -2108,38 +1988,26 @@ class _ProjectCardState extends State<_ProjectCard> {
             label: 'Project Name',
             hint: 'e.g. E-Commerce Platform',
             initialValue: proj.name,
-            onChanged: (v) {
-              proj.name = v;
-              context.read<CVProvider>().updateProject(widget.index, proj);
-            },
+            onChanged: (v) { proj.name = v; context.read<CVProvider>().updateProject(widget.index, proj); },
           ),
           _FormField(
             label: 'Technologies Used',
             hint: 'Flutter, Firebase, Node.js',
             initialValue: proj.technologies,
-            onChanged: (v) {
-              proj.technologies = v;
-              context.read<CVProvider>().updateProject(widget.index, proj);
-            },
+            onChanged: (v) { proj.technologies = v; context.read<CVProvider>().updateProject(widget.index, proj); },
           ),
           _FormField(
             label: 'Project Link (optional)',
             hint: 'github.com/username/project',
             initialValue: proj.link,
-            onChanged: (v) {
-              proj.link = v;
-              context.read<CVProvider>().updateProject(widget.index, proj);
-            },
+            onChanged: (v) { proj.link = v; context.read<CVProvider>().updateProject(widget.index, proj); },
           ),
           _FormField(
             label: 'Description',
             hint: 'Briefly describe the project, your role, and impact...',
             initialValue: proj.description,
             maxLines: 3,
-            onChanged: (v) {
-              proj.description = v;
-              context.read<CVProvider>().updateProject(widget.index, proj);
-            },
+            onChanged: (v) { proj.description = v; context.read<CVProvider>().updateProject(widget.index, proj); },
           ),
         ],
       ),
@@ -2166,15 +2034,9 @@ class CertificationsStep extends StatelessWidget {
             subtitle: 'Add your credentials and achievements',
           ),
           const SizedBox(height: 20),
-          ...certs.asMap().entries.map(
-                (e) => _CertCard(index: e.key, cert: e.value),
-          ),
+          ...certs.asMap().entries.map((e) => _CertCard(index: e.key, cert: e.value)),
           const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () => provider.addCertification(),
-            icon: const Icon(Icons.add_circle_outline),
-            label: const Text('Add Certification'),
-          ),
+          _AddButton(label: 'Add Certification', onTap: () => provider.addCertification()),
           if (certs.isEmpty)
             const Padding(
               padding: EdgeInsets.all(24),
@@ -2196,59 +2058,66 @@ class _CertCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: _FormField(
-                    label: 'Certification Name',
-                    hint: 'AWS Certified Developer',
-                    initialValue: cert.name,
-                    onChanged: (v) {
-                      cert.name = v;
-                      context.read<CVProvider>().updateCertification(index, cert);
-                    },
-                  ),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.divider),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _FormField(
+                  label: 'Certification Name',
+                  hint: 'AWS Certified Developer',
+                  initialValue: cert.name,
+                  onChanged: (v) { cert.name = v; context.read<CVProvider>().updateCertification(index, cert); },
                 ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  width: 90,
-                  child: _FormField(
-                    label: 'Year',
-                    hint: '2023',
-                    initialValue: cert.year,
-                    onChanged: (v) {
-                      cert.year = v;
-                      context.read<CVProvider>().updateCertification(index, cert);
-                    },
-                  ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 90,
+                child: _FormField(
+                  label: 'Year',
+                  hint: '2023',
+                  initialValue: cert.year,
+                  onChanged: (v) { cert.year = v; context.read<CVProvider>().updateCertification(index, cert); },
                 ),
-              ],
-            ),
-            _FormField(
-              label: 'Issuing Organisation',
-              hint: 'Amazon Web Services',
-              initialValue: cert.issuer,
-              onChanged: (v) {
-                cert.issuer = v;
-                context.read<CVProvider>().updateCertification(index, cert);
-              },
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () => context.read<CVProvider>().removeCertification(index),
-                icon: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
-                label: const Text('Remove', style: TextStyle(color: Colors.red, fontSize: 12)),
+              ),
+            ],
+          ),
+          _FormField(
+            label: 'Issuing Organisation',
+            hint: 'Amazon Web Services',
+            initialValue: cert.issuer,
+            onChanged: (v) { cert.issuer = v; context.read<CVProvider>().updateCertification(index, cert); },
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: GestureDetector(
+              onTap: () => context.read<CVProvider>().removeCertification(index),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.07),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.delete_outline, size: 14, color: Colors.red),
+                    SizedBox(width: 4),
+                    Text('Remove', style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w500)),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -2267,16 +2136,29 @@ class TemplateSelectionScreen extends StatelessWidget {
     final selected = provider.selectedTemplateIndex;
 
     return Scaffold(
+      backgroundColor: AppTheme.bgSurface,
       appBar: AppBar(title: const Text('Choose Template')),
       body: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.white,
-            child: const Text(
-              'Select a template that best fits your profile. You can change it anytime.',
-              style: TextStyle(
-                  color: AppTheme.textSecondary, fontSize: 13, height: 1.4),
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryBlue.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.15)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline, size: 15, color: AppTheme.primaryBlue),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Select a template that best fits your profile. You can change it anytime.',
+                    style: TextStyle(color: AppTheme.primaryBlue, fontSize: 12, height: 1.4),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -2290,31 +2172,29 @@ class TemplateSelectionScreen extends StatelessWidget {
                 return GestureDetector(
                   onTap: () => provider.selectTemplate(index),
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
+                    duration: const Duration(milliseconds: 220),
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: isSelected
-                            ? template.primaryColor
-                            : AppTheme.dividerColor,
-                        width: isSelected ? 2.5 : 1,
+                        color: isSelected ? template.primaryColor : AppTheme.divider,
+                        width: isSelected ? 2 : 1,
                       ),
                       color: isSelected
-                          ? template.primaryColor.withOpacity(0.04)
+                          ? template.primaryColor.withOpacity(0.03)
                           : Colors.white,
                       boxShadow: isSelected
                           ? [
                         BoxShadow(
-                          color: template.primaryColor.withOpacity(0.15),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
+                          color: template.primaryColor.withOpacity(0.12),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
                         )
                       ]
                           : [
                         const BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 4,
+                          color: Color(0x08000000),
+                          blurRadius: 8,
                           offset: Offset(0, 2),
                         )
                       ],
@@ -2324,32 +2204,22 @@ class TemplateSelectionScreen extends StatelessWidget {
                       child: Row(
                         children: [
                           Container(
-                            width: 56,
-                            height: 72,
+                            width: 54,
+                            height: 70,
                             decoration: BoxDecoration(
                               color: template.primaryColor,
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(template.icon,
-                                    color: Colors.white, size: 24),
+                                Icon(template.icon, color: Colors.white, size: 22),
                                 const SizedBox(height: 4),
-                                Container(
-                                    height: 2,
-                                    width: 30,
-                                    color: Colors.white54),
+                                Container(height: 2, width: 28, color: Colors.white54),
                                 const SizedBox(height: 3),
-                                Container(
-                                    height: 2,
-                                    width: 24,
-                                    color: Colors.white38),
+                                Container(height: 2, width: 22, color: Colors.white38),
                                 const SizedBox(height: 3),
-                                Container(
-                                    height: 2,
-                                    width: 28,
-                                    color: Colors.white38),
+                                Container(height: 2, width: 26, color: Colors.white38),
                               ],
                             ),
                           ),
@@ -2360,29 +2230,25 @@ class TemplateSelectionScreen extends StatelessWidget {
                               children: [
                                 Row(
                                   children: [
-                                    // ---- ADD FLEXIBLE HERE ----
                                     Flexible(
                                       child: Text(
                                         template.name,
                                         style: TextStyle(
                                           fontWeight: FontWeight.w700,
-                                          fontSize: 16,
+                                          fontSize: 15,
                                           color: isSelected
                                               ? template.primaryColor
                                               : AppTheme.textPrimary,
                                         ),
                                       ),
                                     ),
-                                    // ---------------------------
                                     if (isSelected) ...[
                                       const SizedBox(width: 8),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 3),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                         decoration: BoxDecoration(
                                           color: template.primaryColor,
-                                          borderRadius:
-                                          BorderRadius.circular(20),
+                                          borderRadius: BorderRadius.circular(20),
                                         ),
                                         child: const Text('Selected',
                                             style: TextStyle(
@@ -2393,13 +2259,13 @@ class TemplateSelectionScreen extends StatelessWidget {
                                     ],
                                   ],
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 5),
                                 Text(
                                   template.description,
                                   style: const TextStyle(
-                                      fontSize: 13,
+                                      fontSize: 12,
                                       color: AppTheme.textSecondary,
-                                      height: 1.3),
+                                      height: 1.4),
                                 ),
                               ],
                             ),
@@ -2409,10 +2275,8 @@ class TemplateSelectionScreen extends StatelessWidget {
                             isSelected
                                 ? Icons.check_circle_rounded
                                 : Icons.radio_button_unchecked_rounded,
-                            color: isSelected
-                                ? template.primaryColor
-                                : AppTheme.dividerColor,
-                            size: 24,
+                            color: isSelected ? template.primaryColor : AppTheme.divider,
+                            size: 22,
                           ),
                         ],
                       ),
@@ -2422,8 +2286,12 @@ class TemplateSelectionScreen extends StatelessWidget {
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(20),
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: AppTheme.divider)),
+            ),
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -2431,7 +2299,7 @@ class TemplateSelectionScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(builder: (_) => const CVPreviewScreen()),
                 ),
-                icon: const Icon(Icons.visibility_outlined),
+                icon: const Icon(Icons.visibility_outlined, size: 18),
                 label: const Text('Preview CV'),
               ),
             ),
@@ -2454,27 +2322,22 @@ class CVPreviewScreen extends StatefulWidget {
 }
 
 class _CVPreviewScreenState extends State<CVPreviewScreen> {
-  // We will store the generated PDF bytes here
   late Future<Uint8List> _pdfBytesFuture;
 
   @override
   void initState() {
     super.initState();
-    // 1. Grab the provider data ONCE when the screen first loads
     final provider = context.read<CVProvider>();
-
-    // 2. Start building the PDF immediately and save the Future
     _pdfBytesFuture = _buildPDF(provider);
   }
 
   @override
   Widget build(BuildContext context) {
-    // We still watch the provider for the UI (like the AppBar title)
     final provider = context.watch<CVProvider>();
     final template = provider.selectedTemplate;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE8EAED),
+      backgroundColor: const Color(0xFFECEFF1),
       appBar: AppBar(
         title: Text('Preview — ${template.name}'),
         actions: [
@@ -2490,30 +2353,34 @@ class _CVPreviewScreenState extends State<CVPreviewScreen> {
       ),
       body: Column(
         children: [
-          // Top action hint
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            color: template.primaryColor.withOpacity(0.1),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: const Border(bottom: BorderSide(color: AppTheme.divider)),
+            ),
             child: Row(
               children: [
-                Icon(Icons.info_outline,
-                    size: 16, color: template.primaryColor),
-                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: template.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.info_outline, size: 14, color: template.primaryColor),
+                ),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     'This is the actual A4 PDF rendering. Zoom and pan to review.',
-                    style: TextStyle(
-                        fontSize: 12, color: template.primaryColor),
+                    style: TextStyle(fontSize: 12, color: template.primaryColor, fontWeight: FontWeight.w500),
                   ),
                 ),
               ],
             ),
           ),
-
-          // ---- REAL PDF PREVIEW ----
           Expanded(
             child: PdfPreview(
-              // 3. Hand it the CACHED future, so it never rebuilds the PDF on scroll!
               build: (format) => _pdfBytesFuture,
               useActions: false,
               allowPrinting: false,
@@ -2522,12 +2389,10 @@ class _CVPreviewScreenState extends State<CVPreviewScreen> {
               canChangePageFormat: false,
               maxPageWidth: 700,
               scrollViewDecoration: const BoxDecoration(
-                color: Color(0xFFE8EAED),
+                color: Color(0xFFECEFF1),
               ),
             ),
           ),
-
-          // Bottom Action Bar
           _PreviewActionBar(provider: provider),
         ],
       ),
@@ -2535,7 +2400,6 @@ class _CVPreviewScreenState extends State<CVPreviewScreen> {
   }
 }
 
-/// Renders the actual CV preview matching the selected template
 class _CVPreviewWidget extends StatelessWidget {
   final CVProvider provider;
   final bool isDark;
@@ -2562,9 +2426,6 @@ class _CVPreviewWidget extends StatelessWidget {
   }
 }
 
-// ---- Template Preview Widgets ----
-
-/// Classic ATS: Simple single-column, black & white, highly ATS-friendly
 class _ClassicATSPreview extends StatelessWidget {
   final CVProvider provider;
   final bool isDark;
@@ -2584,17 +2445,12 @@ class _ClassicATSPreview extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Center(
             child: Column(
               children: [
                 Text(
                   info.fullName.isNotEmpty ? info.fullName : 'Your Full Name',
-                  style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: textColor,
-                      letterSpacing: 1),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: textColor, letterSpacing: 1),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -2618,25 +2474,21 @@ class _ClassicATSPreview extends StatelessWidget {
           const SizedBox(height: 16),
           Divider(color: borderColor, thickness: 2),
           const SizedBox(height: 12),
-
           if (info.summary.isNotEmpty) ...[
             _PreviewSectionTitle(title: 'PROFESSIONAL SUMMARY', color: borderColor),
             const SizedBox(height: 8),
             Text(info.summary, style: TextStyle(fontSize: 12, color: textColor, height: 1.5)),
             const SizedBox(height: 16),
           ],
-
           if (provider.workExperiences.isNotEmpty) ...[
             _PreviewSectionTitle(title: 'WORK EXPERIENCE', color: borderColor),
             ...provider.workExperiences.map((exp) => _ClassicExpEntry(exp: exp, textColor: textColor, subColor: subColor)),
           ],
-
           if (provider.educations.isNotEmpty) ...[
             const SizedBox(height: 12),
             _PreviewSectionTitle(title: 'EDUCATION', color: borderColor),
             ...provider.educations.map((edu) => _ClassicEduEntry(edu: edu, textColor: textColor, subColor: subColor)),
           ],
-
           if (provider.skills.isNotEmpty) ...[
             const SizedBox(height: 12),
             _PreviewSectionTitle(title: 'SKILLS', color: borderColor),
@@ -2647,7 +2499,6 @@ class _ClassicATSPreview extends StatelessWidget {
               children: provider.skills.map((s) => _SkillPill(skill: s, color: borderColor)).toList(),
             ),
           ],
-
           if (provider.certifications.isNotEmpty) ...[
             const SizedBox(height: 12),
             _PreviewSectionTitle(title: 'CERTIFICATIONS', color: borderColor),
@@ -2667,7 +2518,6 @@ class _ClassicATSPreview extends StatelessWidget {
               ),
             )),
           ],
-
           if (provider.projects.isNotEmpty) ...[
             const SizedBox(height: 12),
             _PreviewSectionTitle(title: 'PROJECTS', color: borderColor),
@@ -2679,7 +2529,6 @@ class _ClassicATSPreview extends StatelessWidget {
   }
 }
 
-/// Modern Clean: Two-column sidebar layout
 class _ModernCleanPreview extends StatelessWidget {
   final CVProvider provider;
   final bool isDark;
@@ -2695,7 +2544,6 @@ class _ModernCleanPreview extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Sidebar
         SizedBox(
           width: 160,
           child: Container(
@@ -2709,13 +2557,8 @@ class _ModernCleanPreview extends StatelessWidget {
                     radius: 36,
                     backgroundColor: Colors.white24,
                     child: Text(
-                      info.fullName.isNotEmpty
-                          ? info.fullName[0].toUpperCase()
-                          : 'A',
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold),
+                      info.fullName.isNotEmpty ? info.fullName[0].toUpperCase() : 'A',
+                      style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -2748,7 +2591,6 @@ class _ModernCleanPreview extends StatelessWidget {
             ),
           ),
         ),
-        // Main Body
         Expanded(
           child: Container(
             color: bodyBg,
@@ -2758,40 +2600,30 @@ class _ModernCleanPreview extends StatelessWidget {
               children: [
                 Text(
                   info.fullName.isNotEmpty ? info.fullName : 'Your Full Name',
-                  style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: sidebarColor),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: sidebarColor),
                 ),
                 Text(
                   info.jobTitle.isNotEmpty ? info.jobTitle : 'Your Title',
-                  style: TextStyle(
-                      fontSize: 13,
-                      color: isDark ? Colors.white60 : Colors.grey[600]),
+                  style: TextStyle(fontSize: 13, color: isDark ? Colors.white60 : Colors.grey[600]),
                 ),
                 const SizedBox(height: 12),
                 if (info.summary.isNotEmpty) ...[
-                  Text(info.summary,
-                      style: TextStyle(
-                          fontSize: 11, color: bodyText, height: 1.5)),
+                  Text(info.summary, style: TextStyle(fontSize: 11, color: bodyText, height: 1.5)),
                   const SizedBox(height: 12),
                 ],
                 if (provider.workExperiences.isNotEmpty) ...[
                   _ModernSectionTitle(title: 'Experience', color: sidebarColor),
-                  ...provider.workExperiences.map((exp) =>
-                      _ClassicExpEntry(exp: exp, textColor: bodyText, subColor: sidebarColor)),
+                  ...provider.workExperiences.map((exp) => _ClassicExpEntry(exp: exp, textColor: bodyText, subColor: sidebarColor)),
                 ],
                 if (provider.educations.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   _ModernSectionTitle(title: 'Education', color: sidebarColor),
-                  ...provider.educations.map((edu) =>
-                      _ClassicEduEntry(edu: edu, textColor: bodyText, subColor: sidebarColor)),
+                  ...provider.educations.map((edu) => _ClassicEduEntry(edu: edu, textColor: bodyText, subColor: sidebarColor)),
                 ],
                 if (provider.projects.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   _ModernSectionTitle(title: 'Projects', color: sidebarColor),
-                  ...provider.projects.map((p) =>
-                      _ClassicProjectEntry(project: p, textColor: bodyText, subColor: sidebarColor)),
+                  ...provider.projects.map((p) => _ClassicProjectEntry(project: p, textColor: bodyText, subColor: sidebarColor)),
                 ],
               ],
             ),
@@ -2802,7 +2634,6 @@ class _ModernCleanPreview extends StatelessWidget {
   }
 }
 
-/// Student/Fresher: Education first, colourful, highlights projects
 class _StudentFresherPreview extends StatelessWidget {
   final CVProvider provider;
   final bool isDark;
@@ -2821,7 +2652,6 @@ class _StudentFresherPreview extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Coloured Header
           Container(
             color: headerColor,
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
@@ -2830,34 +2660,22 @@ class _StudentFresherPreview extends StatelessWidget {
               children: [
                 Text(
                   info.fullName.isNotEmpty ? info.fullName : 'Your Name',
-                  style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white),
+                  style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: Colors.white),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  info.jobTitle.isNotEmpty
-                      ? info.jobTitle
-                      : 'Student / Graduate',
-                  style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.8),
-                      fontWeight: FontWeight.w500),
+                  info.jobTitle.isNotEmpty ? info.jobTitle : 'Student / Graduate',
+                  style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.8), fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 12,
                   runSpacing: 6,
                   children: [
-                    if (info.email.isNotEmpty)
-                      _WhiteChip(text: info.email, icon: Icons.email_outlined),
-                    if (info.phone.isNotEmpty)
-                      _WhiteChip(text: info.phone, icon: Icons.phone_outlined),
-                    if (info.location.isNotEmpty)
-                      _WhiteChip(text: info.location, icon: Icons.location_on_outlined),
-                    if (info.linkedin.isNotEmpty)
-                      _WhiteChip(text: info.linkedin, icon: Icons.link),
+                    if (info.email.isNotEmpty) _WhiteChip(text: info.email, icon: Icons.email_outlined),
+                    if (info.phone.isNotEmpty) _WhiteChip(text: info.phone, icon: Icons.phone_outlined),
+                    if (info.location.isNotEmpty) _WhiteChip(text: info.location, icon: Icons.location_on_outlined),
+                    if (info.linkedin.isNotEmpty) _WhiteChip(text: info.linkedin, icon: Icons.link),
                   ],
                 ),
               ],
@@ -2871,19 +2689,14 @@ class _StudentFresherPreview extends StatelessWidget {
                 if (info.summary.isNotEmpty) ...[
                   _ColorSectionTitle(title: 'ABOUT ME', color: accentColor),
                   const SizedBox(height: 6),
-                  Text(info.summary,
-                      style: TextStyle(fontSize: 12, color: textColor, height: 1.5)),
+                  Text(info.summary, style: TextStyle(fontSize: 12, color: textColor, height: 1.5)),
                   const SizedBox(height: 16),
                 ],
-
-                // Education First for Student
                 if (provider.educations.isNotEmpty) ...[
                   _ColorSectionTitle(title: 'EDUCATION', color: accentColor),
-                  ...provider.educations.map((edu) =>
-                      _ClassicEduEntry(edu: edu, textColor: textColor, subColor: accentColor)),
+                  ...provider.educations.map((edu) => _ClassicEduEntry(edu: edu, textColor: textColor, subColor: accentColor)),
                   const SizedBox(height: 16),
                 ],
-
                 if (provider.skills.isNotEmpty) ...[
                   _ColorSectionTitle(title: 'SKILLS', color: accentColor),
                   const SizedBox(height: 8),
@@ -2894,21 +2707,16 @@ class _StudentFresherPreview extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                 ],
-
                 if (provider.projects.isNotEmpty) ...[
                   _ColorSectionTitle(title: 'PROJECTS', color: accentColor),
-                  ...provider.projects.map((p) =>
-                      _ClassicProjectEntry(project: p, textColor: textColor, subColor: accentColor)),
+                  ...provider.projects.map((p) => _ClassicProjectEntry(project: p, textColor: textColor, subColor: accentColor)),
                   const SizedBox(height: 16),
                 ],
-
                 if (provider.workExperiences.isNotEmpty) ...[
                   _ColorSectionTitle(title: 'EXPERIENCE', color: accentColor),
-                  ...provider.workExperiences.map((exp) =>
-                      _ClassicExpEntry(exp: exp, textColor: textColor, subColor: accentColor)),
+                  ...provider.workExperiences.map((exp) => _ClassicExpEntry(exp: exp, textColor: textColor, subColor: accentColor)),
                   const SizedBox(height: 16),
                 ],
-
                 if (provider.certifications.isNotEmpty) ...[
                   _ColorSectionTitle(title: 'CERTIFICATIONS', color: accentColor),
                   ...provider.certifications.map((c) => Padding(
@@ -2936,7 +2744,6 @@ class _StudentFresherPreview extends StatelessWidget {
   }
 }
 
-/// Hybrid Pro: Two columns, skills-first
 class _HybridPreview extends StatelessWidget {
   final CVProvider provider;
   final bool isDark;
@@ -2955,7 +2762,6 @@ class _HybridPreview extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header strip
           Container(
             color: primary,
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
@@ -2967,15 +2773,11 @@ class _HybridPreview extends StatelessWidget {
                     children: [
                       Text(
                         info.fullName.isNotEmpty ? info.fullName : 'Your Name',
-                        style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white),
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white),
                       ),
                       Text(
                         info.jobTitle.isNotEmpty ? info.jobTitle : 'Your Title',
-                        style: const TextStyle(
-                            color: Colors.white70, fontSize: 13),
+                        style: const TextStyle(color: Colors.white70, fontSize: 13),
                       ),
                     ],
                   ),
@@ -2983,18 +2785,9 @@ class _HybridPreview extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    if (info.email.isNotEmpty)
-                      Text(info.email,
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 11)),
-                    if (info.phone.isNotEmpty)
-                      Text(info.phone,
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 11)),
-                    if (info.location.isNotEmpty)
-                      Text(info.location,
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 11)),
+                    if (info.email.isNotEmpty) Text(info.email, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                    if (info.phone.isNotEmpty) Text(info.phone, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                    if (info.location.isNotEmpty) Text(info.location, style: const TextStyle(color: Colors.white70, fontSize: 11)),
                   ],
                 ),
               ],
@@ -3005,7 +2798,6 @@ class _HybridPreview extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left column: Skills + Certs
                 SizedBox(
                   width: 150,
                   child: Column(
@@ -3018,16 +2810,11 @@ class _HybridPreview extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(s.name,
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      color: textColor,
-                                      fontWeight: FontWeight.w600)),
+                              Text(s.name, style: TextStyle(fontSize: 11, color: textColor, fontWeight: FontWeight.w600)),
                               const SizedBox(height: 2),
                               LinearProgressIndicator(
                                 value: s.level / 5,
-                                backgroundColor:
-                                Colors.grey.withOpacity(0.2),
+                                backgroundColor: Colors.grey.withOpacity(0.2),
                                 valueColor: AlwaysStoppedAnimation(subColor),
                                 minHeight: 3,
                               ),
@@ -3041,9 +2828,7 @@ class _HybridPreview extends StatelessWidget {
                         _HybridSectionTitle(title: 'LANGUAGES', color: subColor),
                         ...provider.languages.map((l) => Padding(
                           padding: const EdgeInsets.symmetric(vertical: 2),
-                          child: Text(l,
-                              style: TextStyle(
-                                  fontSize: 11, color: textColor)),
+                          child: Text(l, style: TextStyle(fontSize: 11, color: textColor)),
                         )),
                       ],
                       if (provider.certifications.isNotEmpty) ...[
@@ -3051,9 +2836,7 @@ class _HybridPreview extends StatelessWidget {
                         _HybridSectionTitle(title: 'CERTS', color: subColor),
                         ...provider.certifications.map((c) => Padding(
                           padding: const EdgeInsets.symmetric(vertical: 2),
-                          child: Text(c.name,
-                              style: TextStyle(
-                                  fontSize: 10, color: textColor)),
+                          child: Text(c.name, style: TextStyle(fontSize: 10, color: textColor)),
                         )),
                       ],
                     ],
@@ -3062,34 +2845,28 @@ class _HybridPreview extends StatelessWidget {
                 const SizedBox(width: 16),
                 Container(width: 1, color: Colors.grey.withOpacity(0.2)),
                 const SizedBox(width: 16),
-                // Right column: Experience + Education + Projects
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (info.summary.isNotEmpty) ...[
                         _HybridSectionTitle(title: 'PROFILE', color: subColor),
-                        Text(info.summary,
-                            style: TextStyle(
-                                fontSize: 11, color: textColor, height: 1.5)),
+                        Text(info.summary, style: TextStyle(fontSize: 11, color: textColor, height: 1.5)),
                         const SizedBox(height: 12),
                       ],
                       if (provider.workExperiences.isNotEmpty) ...[
                         _HybridSectionTitle(title: 'EXPERIENCE', color: subColor),
-                        ...provider.workExperiences.map((exp) =>
-                            _ClassicExpEntry(exp: exp, textColor: textColor, subColor: subColor)),
+                        ...provider.workExperiences.map((exp) => _ClassicExpEntry(exp: exp, textColor: textColor, subColor: subColor)),
                       ],
                       if (provider.educations.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         _HybridSectionTitle(title: 'EDUCATION', color: subColor),
-                        ...provider.educations.map((edu) =>
-                            _ClassicEduEntry(edu: edu, textColor: textColor, subColor: subColor)),
+                        ...provider.educations.map((edu) => _ClassicEduEntry(edu: edu, textColor: textColor, subColor: subColor)),
                       ],
                       if (provider.projects.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         _HybridSectionTitle(title: 'PROJECTS', color: subColor),
-                        ...provider.projects.map((p) =>
-                            _ClassicProjectEntry(project: p, textColor: textColor, subColor: subColor)),
+                        ...provider.projects.map((p) => _ClassicProjectEntry(project: p, textColor: textColor, subColor: subColor)),
                       ],
                     ],
                   ),
@@ -3103,7 +2880,6 @@ class _HybridPreview extends StatelessWidget {
   }
 }
 
-/// One-Page Compact: Dense layout, minimal spacing
 class _OnePageCompactPreview extends StatelessWidget {
   final CVProvider provider;
   final bool isDark;
@@ -3123,7 +2899,6 @@ class _OnePageCompactPreview extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Compact header
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -3133,10 +2908,7 @@ class _OnePageCompactPreview extends StatelessWidget {
                   children: [
                     Text(
                       info.fullName.isNotEmpty ? info.fullName : 'Your Name',
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: primary),
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: primary),
                     ),
                     Text(
                       info.jobTitle.isNotEmpty ? info.jobTitle : 'Professional Title',
@@ -3148,14 +2920,10 @@ class _OnePageCompactPreview extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  if (info.email.isNotEmpty)
-                    Text(info.email, style: TextStyle(fontSize: 10, color: textColor)),
-                  if (info.phone.isNotEmpty)
-                    Text(info.phone, style: TextStyle(fontSize: 10, color: textColor)),
-                  if (info.location.isNotEmpty)
-                    Text(info.location, style: TextStyle(fontSize: 10, color: textColor)),
-                  if (info.linkedin.isNotEmpty)
-                    Text(info.linkedin, style: TextStyle(fontSize: 10, color: textColor)),
+                  if (info.email.isNotEmpty) Text(info.email, style: TextStyle(fontSize: 10, color: textColor)),
+                  if (info.phone.isNotEmpty) Text(info.phone, style: TextStyle(fontSize: 10, color: textColor)),
+                  if (info.location.isNotEmpty) Text(info.location, style: TextStyle(fontSize: 10, color: textColor)),
+                  if (info.linkedin.isNotEmpty) Text(info.linkedin, style: TextStyle(fontSize: 10, color: textColor)),
                 ],
               ),
             ],
@@ -3163,20 +2931,15 @@ class _OnePageCompactPreview extends StatelessWidget {
           const SizedBox(height: 6),
           Divider(color: primary, thickness: 1.5),
           const SizedBox(height: 4),
-
           if (info.summary.isNotEmpty) ...[
-            Text(info.summary,
-                style: TextStyle(fontSize: 11, color: textColor, height: 1.4)),
+            Text(info.summary, style: TextStyle(fontSize: 11, color: textColor, height: 1.4)),
             const SizedBox(height: 8),
             Divider(color: Colors.grey.withOpacity(0.2)),
           ],
-
-          // Two columns for compact layout
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left column
                 Expanded(
                   flex: 3,
                   child: Column(
@@ -3195,7 +2958,6 @@ class _OnePageCompactPreview extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                // Right column
                 SizedBox(
                   width: 130,
                   child: Column(
@@ -3213,33 +2975,26 @@ class _OnePageCompactPreview extends StatelessWidget {
                           spacing: 4,
                           runSpacing: 4,
                           children: provider.skills.take(12).map((s) => Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: primary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: Text(s.name,
-                                style: TextStyle(
-                                    fontSize: 9,
-                                    color: primary,
-                                    fontWeight: FontWeight.w600)),
+                            child: Text(s.name, style: TextStyle(fontSize: 9, color: primary, fontWeight: FontWeight.w600)),
                           )).toList(),
                         ),
                       ],
                       if (provider.languages.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         _CompactSectionTitle(title: 'LANGUAGES', color: primary),
-                        ...provider.languages.map((l) =>
-                            Text(l, style: TextStyle(fontSize: 10, color: textColor))),
+                        ...provider.languages.map((l) => Text(l, style: TextStyle(fontSize: 10, color: textColor))),
                       ],
                       if (provider.certifications.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         _CompactSectionTitle(title: 'CERTS', color: primary),
                         ...provider.certifications.map((c) => Padding(
                           padding: const EdgeInsets.only(bottom: 3),
-                          child: Text(c.name,
-                              style: TextStyle(fontSize: 10, color: textColor)),
+                          child: Text(c.name, style: TextStyle(fontSize: 10, color: textColor)),
                         )),
                       ],
                     ],
@@ -3284,8 +3039,7 @@ class _WhiteChip extends StatelessWidget {
       children: [
         Icon(icon, size: 12, color: Colors.white70),
         const SizedBox(width: 4),
-        Text(text,
-            style: const TextStyle(color: Colors.white70, fontSize: 11)),
+        Text(text, style: const TextStyle(color: Colors.white70, fontSize: 11)),
       ],
     );
   }
@@ -3301,12 +3055,7 @@ class _PreviewSectionTitle extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title,
-            style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: color,
-                letterSpacing: 1.2)),
+        Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: color, letterSpacing: 1.2)),
         Container(height: 1.5, color: color, margin: const EdgeInsets.only(top: 2, bottom: 8)),
       ],
     );
@@ -3322,11 +3071,7 @@ class _ModernSectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(title,
-          style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: color)),
+      child: Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: color)),
     );
   }
 }
@@ -3345,12 +3090,7 @@ class _ColorSectionTitle extends StatelessWidget {
         color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(title,
-          style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: color,
-              letterSpacing: 1)),
+      child: Text(title, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: color, letterSpacing: 1)),
     );
   }
 }
@@ -3364,12 +3104,7 @@ class _HybridSectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(title,
-          style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: color,
-              letterSpacing: 1)),
+      child: Text(title, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: color, letterSpacing: 1)),
     );
   }
 }
@@ -3384,14 +3119,8 @@ class _CompactSectionTitle extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title,
-            style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                color: color,
-                letterSpacing: 1)),
-        Container(
-            height: 1, color: color.withOpacity(0.5), margin: const EdgeInsets.only(bottom: 4)),
+        Text(title, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: color, letterSpacing: 1)),
+        Container(height: 1, color: color.withOpacity(0.5), margin: const EdgeInsets.only(bottom: 4)),
       ],
     );
   }
@@ -3401,20 +3130,14 @@ class _SidebarSection extends StatelessWidget {
   final String title;
   final Color color;
   final List<Widget> children;
-  const _SidebarSection(
-      {required this.title, required this.color, required this.children});
+  const _SidebarSection({required this.title, required this.color, required this.children});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title,
-            style: TextStyle(
-                color: color,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1)),
+        Text(title, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1)),
         const SizedBox(height: 4),
         ...children,
       ],
@@ -3430,8 +3153,7 @@ class _SidebarItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 3),
-      child: Text(text,
-          style: const TextStyle(color: Colors.white70, fontSize: 10)),
+      child: Text(text, style: const TextStyle(color: Colors.white70, fontSize: 10)),
     );
   }
 }
@@ -3447,8 +3169,7 @@ class _SidebarSkillItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(skill.name,
-              style: const TextStyle(color: Colors.white, fontSize: 10)),
+          Text(skill.name, style: const TextStyle(color: Colors.white, fontSize: 10)),
           const SizedBox(height: 2),
           LinearProgressIndicator(
             value: skill.level / 5,
@@ -3476,8 +3197,7 @@ class _SkillPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
-      child: Text(skill.name,
-          style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+      child: Text(skill.name, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
     );
   }
 }
@@ -3486,8 +3206,7 @@ class _ClassicExpEntry extends StatelessWidget {
   final WorkExperience exp;
   final Color textColor;
   final Color subColor;
-  const _ClassicExpEntry(
-      {required this.exp, required this.textColor, required this.subColor});
+  const _ClassicExpEntry({required this.exp, required this.textColor, required this.subColor});
 
   @override
   Widget build(BuildContext context) {
@@ -3499,25 +3218,18 @@ class _ClassicExpEntry extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(exp.position,
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: textColor)),
+              Text(exp.position, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textColor)),
               Text(
                 '${exp.startDate}${exp.startDate.isNotEmpty ? ' — ' : ''}${exp.isCurrentJob ? 'Present' : exp.endDate}',
                 style: TextStyle(fontSize: 10, color: subColor),
               ),
             ],
           ),
-          Text(exp.company,
-              style: TextStyle(
-                  fontSize: 11, color: subColor, fontWeight: FontWeight.w600)),
+          Text(exp.company, style: TextStyle(fontSize: 11, color: subColor, fontWeight: FontWeight.w600)),
           if (exp.description.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text(exp.description,
-                  style: TextStyle(fontSize: 11, color: textColor, height: 1.4)),
+              child: Text(exp.description, style: TextStyle(fontSize: 11, color: textColor, height: 1.4)),
             ),
         ],
       ),
@@ -3529,8 +3241,7 @@ class _ClassicEduEntry extends StatelessWidget {
   final Education edu;
   final Color textColor;
   final Color subColor;
-  const _ClassicEduEntry(
-      {required this.edu, required this.textColor, required this.subColor});
+  const _ClassicEduEntry({required this.edu, required this.textColor, required this.subColor});
 
   @override
   Widget build(BuildContext context) {
@@ -3545,10 +3256,7 @@ class _ClassicEduEntry extends StatelessWidget {
               Expanded(
                 child: Text(
                   '${edu.degree}${edu.field.isNotEmpty ? ' in ${edu.field}' : ''}',
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: textColor),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textColor),
                 ),
               ),
               Text(
@@ -3557,12 +3265,9 @@ class _ClassicEduEntry extends StatelessWidget {
               ),
             ],
           ),
-          Text(edu.institution,
-              style: TextStyle(
-                  fontSize: 11, color: subColor, fontWeight: FontWeight.w600)),
+          Text(edu.institution, style: TextStyle(fontSize: 11, color: subColor, fontWeight: FontWeight.w600)),
           if (edu.grade.isNotEmpty)
-            Text('Grade: ${edu.grade}',
-                style: TextStyle(fontSize: 10, color: textColor)),
+            Text('Grade: ${edu.grade}', style: TextStyle(fontSize: 10, color: textColor)),
         ],
       ),
     );
@@ -3573,8 +3278,7 @@ class _ClassicProjectEntry extends StatelessWidget {
   final Project project;
   final Color textColor;
   final Color subColor;
-  const _ClassicProjectEntry(
-      {required this.project, required this.textColor, required this.subColor});
+  const _ClassicProjectEntry({required this.project, required this.textColor, required this.subColor});
 
   @override
   Widget build(BuildContext context) {
@@ -3583,20 +3287,13 @@ class _ClassicProjectEntry extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(project.name,
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: textColor)),
+          Text(project.name, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textColor)),
           if (project.technologies.isNotEmpty)
-            Text('Tech: ${project.technologies}',
-                style: TextStyle(fontSize: 10, color: subColor, fontStyle: FontStyle.italic)),
+            Text('Tech: ${project.technologies}', style: TextStyle(fontSize: 10, color: subColor, fontStyle: FontStyle.italic)),
           if (project.description.isNotEmpty)
-            Text(project.description,
-                style: TextStyle(fontSize: 11, color: textColor, height: 1.4)),
+            Text(project.description, style: TextStyle(fontSize: 11, color: textColor, height: 1.4)),
           if (project.link.isNotEmpty)
-            Text(project.link,
-                style: TextStyle(fontSize: 10, color: subColor)),
+            Text(project.link, style: TextStyle(fontSize: 10, color: subColor)),
         ],
       ),
     );
@@ -3616,8 +3313,7 @@ class _CompactExpEntry extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(exp.position,
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: textColor)),
+          Text(exp.position, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: textColor)),
           Text('${exp.company} | ${exp.startDate}-${exp.isCurrentJob ? 'Present' : exp.endDate}',
               style: TextStyle(fontSize: 10, color: subColor)),
           if (exp.description.isNotEmpty)
@@ -3688,37 +3384,34 @@ class _PreviewActionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: AppTheme.dividerColor)),
+        border: Border(top: BorderSide(color: AppTheme.divider)),
       ),
       child: SafeArea(
-        top: false, // Only protect the bottom from the home indicator
+        top: false,
         child: Wrap(
-
-          alignment: WrapAlignment.center, // Centers the buttons
-          spacing: 12.0, // Horizontal gap between buttons
-          runSpacing: 12.0, // Vertical gap if they wrap to the next line
+          alignment: WrapAlignment.center,
+          spacing: 12.0,
+          runSpacing: 12.0,
           children: [
-              // ---- NEW SAVE DRAFT BUTTON ----
-              OutlinedButton.icon(
-                onPressed: () {
-                  provider.saveDraft();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Saved to drafts!')),
-                  );
-                  // Pop back to the Home Screen so they can see it in "Saved CVs"
-                  Navigator.popUntil(context, (route) => route.isFirst);
-                },
-                icon: const Icon(Icons.save_outlined, size: 18),
-                label: const Text('Save Draft'),
-              ),
-              ElevatedButton.icon(
-                onPressed: () => _generateAndSavePDF(context, provider),
-                icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
-                label: const Text('Generate PDF'),
-              ),
+            OutlinedButton.icon(
+              onPressed: () {
+                provider.saveDraft();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Saved to drafts!')),
+                );
+                Navigator.popUntil(context, (route) => route.isFirst);
+              },
+              icon: const Icon(Icons.save_outlined, size: 16),
+              label: const Text('Save Draft'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => _generateAndSavePDF(context, provider),
+              icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
+              label: const Text('Generate PDF'),
+            ),
           ],
         ),
       ),
@@ -3734,18 +3427,36 @@ Future<void> _generateAndSavePDF(BuildContext context, CVProvider provider) asyn
   showDialog(
     context: context,
     barrierDismissible: false,
-    builder: (_) => const Center(
-      child: Card(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Rendering Professional PDF...'),
-            ],
-          ),
+    builder: (_) => Center(
+      child: Container(
+        margin: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: AppTheme.primaryBlue),
+            SizedBox(height: 16),
+            Text(
+              'Rendering Professional PDF...',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+                decoration: TextDecoration.none,
+              ),
+            ),
+          ],
         ),
       ),
     ),
@@ -3827,7 +3538,6 @@ Future<Uint8List> _buildPDF(CVProvider provider) async {
   }
 }
 
-// ---- NATIVE SVG ICONS HELPER (100% Offline) ----
 const _svgPhone = 'M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z';
 const _svgMail = 'M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z';
 const _svgLoc = 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z';
@@ -3842,9 +3552,6 @@ pw.Widget _drawIcon(String path, PdfColor color, {double size = 10}) {
   );
 }
 
-// =============================================================================
-// TEMPLATE 1: EXECUTIVE ATS (Harvard Standard)
-// =============================================================================
 Future<Uint8List> _buildExecutiveATS(CVProvider p) async {
   final pdf = pw.Document();
   final font = pw.Font.times();
@@ -3870,21 +3577,18 @@ Future<Uint8List> _buildExecutiveATS(CVProvider p) async {
                     pw.SizedBox(width: 4),
                     pw.Text(p.personalInfo.location, style: pw.TextStyle(font: font, fontSize: 10)),
                   ]),
-
                 if (p.personalInfo.phone.isNotEmpty)
                   pw.Row(mainAxisSize: pw.MainAxisSize.min, children: [
                     _drawIcon(_svgPhone, PdfColors.grey800, size: 9),
                     pw.SizedBox(width: 4),
                     pw.Text(p.personalInfo.phone, style: pw.TextStyle(font: font, fontSize: 10)),
                   ]),
-
                 if (p.personalInfo.email.isNotEmpty)
                   pw.Row(mainAxisSize: pw.MainAxisSize.min, children: [
                     _drawIcon(_svgMail, PdfColors.grey800, size: 9),
                     pw.SizedBox(width: 4),
                     pw.Text(p.personalInfo.email, style: pw.TextStyle(font: font, fontSize: 10)),
                   ]),
-
                 if (p.personalInfo.linkedin.isNotEmpty)
                   pw.Row(mainAxisSize: pw.MainAxisSize.min, children: [
                     _drawIcon(_svgLink, PdfColors.grey800, size: 9),
@@ -3897,13 +3601,11 @@ Future<Uint8List> _buildExecutiveATS(CVProvider p) async {
         ),
       ),
       pw.SizedBox(height: 18),
-
       if (p.personalInfo.summary.isNotEmpty) ...[
         _atsHeader('SUMMARY', fontBold),
         pw.Text(p.personalInfo.summary, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 11, lineSpacing: 1.5)),
         pw.SizedBox(height: 16),
       ],
-
       if (p.workExperiences.isNotEmpty) ...[
         _atsHeader('PROFESSIONAL EXPERIENCE', fontBold),
         ...p.workExperiences.map((exp) => pw.Padding(
@@ -3928,7 +3630,6 @@ Future<Uint8List> _buildExecutiveATS(CVProvider p) async {
         )),
         pw.SizedBox(height: 6),
       ],
-
       if (p.educations.isNotEmpty) ...[
         _atsHeader('EDUCATION', fontBold),
         ...p.educations.map((edu) => pw.Padding(
@@ -3959,7 +3660,6 @@ Future<Uint8List> _buildExecutiveATS(CVProvider p) async {
         )),
         pw.SizedBox(height: 6),
       ],
-
       if (p.projects.isNotEmpty) ...[
         _atsHeader('PROJECTS', fontBold),
         ...p.projects.map((proj) => pw.Padding(
@@ -3979,7 +3679,6 @@ Future<Uint8List> _buildExecutiveATS(CVProvider p) async {
         )),
         pw.SizedBox(height: 6),
       ],
-
       if (p.skills.isNotEmpty || p.languages.isNotEmpty) ...[
         _atsHeader('ADDITIONAL INFORMATION', fontBold),
         if (p.skills.isNotEmpty)
@@ -4009,9 +3708,6 @@ pw.Widget _atsHeader(String title, pw.Font fontBold) => pw.Column(
   ],
 );
 
-/// =============================================================================
-// TEMPLATE 2: CORPORATE MODERN (Full Sidebar with Skill Meters)
-// =============================================================================
 Future<Uint8List> _buildCorporateModern(CVProvider p) async {
   final pdf = pw.Document();
   final font = pw.Font.helvetica();
@@ -4019,13 +3715,12 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
   const primaryText = PdfColor.fromInt(0xFF2C3E50);
   const secondaryText = PdfColor.fromInt(0xFF5D6D7E);
   const sidebarBg = PdfColor.fromInt(0xFFF4F6F7);
-  const emptyDotColor = PdfColor.fromInt(0xFFD5DBDB); // Subtle light gray for empty dots
+  const emptyDotColor = PdfColor.fromInt(0xFFD5DBDB);
 
   pdf.addPage(pw.MultiPage(
     pageTheme: pw.PageTheme(
       pageFormat: PdfPageFormat.a4,
       margin: pw.EdgeInsets.zero,
-      // Forces the sidebar background to seamlessly paint to the bottom of EVERY page
       buildBackground: (ctx) => pw.FullPage(
         ignoreMargins: true,
         child: pw.Row(children: [
@@ -4038,7 +3733,6 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
       pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          // Sidebar Content
           pw.Container(
             width: 200,
             padding: const pw.EdgeInsets.all(30),
@@ -4051,7 +3745,6 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
                 if (p.personalInfo.phone.isNotEmpty) _modContact(_svgPhone, p.personalInfo.phone, font, primaryText),
                 if (p.personalInfo.location.isNotEmpty) _modContact(_svgLoc, p.personalInfo.location, font, primaryText),
                 if (p.personalInfo.linkedin.isNotEmpty) _modContact(_svgLink, p.personalInfo.linkedin, font, primaryText),
-
                 if (p.skills.isNotEmpty) ...[
                   pw.SizedBox(height: 30),
                   pw.Text('SKILLS', style: pw.TextStyle(font: fontBold, fontSize: 10, color: primaryText, letterSpacing: 1.5)),
@@ -4063,13 +3756,11 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
                           children: [
                             pw.Text(s.name, style: pw.TextStyle(font: font, fontSize: 10, color: primaryText)),
                             pw.SizedBox(height: 4),
-                            // ---- NEW: Visual Skill Meter ----
                             _buildSkillMeter(s.level, primaryText, emptyDotColor),
                           ]
                       )
                   )),
                 ],
-
                 if (p.languages.isNotEmpty) ...[
                   pw.SizedBox(height: 24),
                   pw.Text('LANGUAGES', style: pw.TextStyle(font: fontBold, fontSize: 10, color: primaryText, letterSpacing: 1.5)),
@@ -4082,8 +3773,6 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
               ],
             ),
           ),
-
-          // Main Content
           pw.Expanded(
             child: pw.Padding(
               padding: const pw.EdgeInsets.fromLTRB(40, 40, 40, 40),
@@ -4094,12 +3783,10 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
                   pw.SizedBox(height: 6),
                   pw.Text(p.personalInfo.jobTitle, style: pw.TextStyle(font: fontBold, fontSize: 12, color: secondaryText, letterSpacing: 1.2)),
                   pw.SizedBox(height: 24),
-
                   if (p.personalInfo.summary.isNotEmpty) ...[
                     pw.Text(p.personalInfo.summary, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 10, color: primaryText, lineSpacing: 1.5)),
                     pw.SizedBox(height: 28),
                   ],
-
                   if (p.workExperiences.isNotEmpty) ...[
                     _modHeader('EXPERIENCE', fontBold, primaryText),
                     ...p.workExperiences.map((exp) => pw.Padding(
@@ -4123,7 +3810,6 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
                       ),
                     )),
                   ],
-
                   if (p.educations.isNotEmpty) ...[
                     pw.SizedBox(height: 10),
                     _modHeader('EDUCATION', fontBold, primaryText),
@@ -4145,7 +3831,6 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
                       ),
                     )),
                   ],
-
                   if (p.projects.isNotEmpty) ...[
                     pw.SizedBox(height: 10),
                     _modHeader('PROJECTS', fontBold, primaryText),
@@ -4175,14 +3860,13 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
   return pdf.save();
 }
 
-// ---- NEW HELPER WIDGET FOR SKILL METERS ----
 pw.Widget _buildSkillMeter(int level, PdfColor filledColor, PdfColor emptyColor) {
   return pw.Row(
     mainAxisSize: pw.MainAxisSize.min,
     children: List.generate(5, (index) {
       return pw.Container(
         margin: const pw.EdgeInsets.only(right: 5),
-        width: 4, // Diameter of the dot
+        width: 4,
         height: 4,
         decoration: pw.BoxDecoration(
           shape: pw.BoxShape.circle,
@@ -4192,7 +3876,6 @@ pw.Widget _buildSkillMeter(int level, PdfColor filledColor, PdfColor emptyColor)
     }),
   );
 }
-// --------------------------------------------
 
 pw.Widget _modContact(String iconSvg, String text, pw.Font font, PdfColor color) => pw.Padding(
     padding: const pw.EdgeInsets.only(bottom: 12),
@@ -4214,9 +3897,6 @@ pw.Widget _modHeader(String title, pw.Font fontBold, PdfColor color) => pw.Colum
   ],
 );
 
-// =============================================================================
-// TEMPLATE 3: ACADEMIC STANDARD (Stanford Engineering Style)
-// =============================================================================
 Future<Uint8List> _buildAcademicStandard(CVProvider p) async {
   final pdf = pw.Document();
   final font = pw.Font.helvetica();
@@ -4248,13 +3928,11 @@ Future<Uint8List> _buildAcademicStandard(CVProvider p) async {
         ],
       ),
       pw.SizedBox(height: 20),
-
       if (p.personalInfo.summary.isNotEmpty) ...[
         _acadHeader('PROFILE', fontBold, primary, subtleGray),
         pw.Text(p.personalInfo.summary, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 10, lineSpacing: 1.5)),
         pw.SizedBox(height: 16),
       ],
-
       if (p.educations.isNotEmpty) ...[
         _acadHeader('EDUCATION', fontBold, primary, subtleGray),
         ...p.educations.map((edu) => pw.Padding(
@@ -4280,7 +3958,6 @@ Future<Uint8List> _buildAcademicStandard(CVProvider p) async {
         )),
         pw.SizedBox(height: 8),
       ],
-
       if (p.projects.isNotEmpty) ...[
         _acadHeader('ACADEMIC & PERSONAL PROJECTS', fontBold, primary, subtleGray),
         ...p.projects.map((proj) => pw.Padding(
@@ -4303,7 +3980,6 @@ Future<Uint8List> _buildAcademicStandard(CVProvider p) async {
         )),
         pw.SizedBox(height: 8),
       ],
-
       if (p.workExperiences.isNotEmpty) ...[
         _acadHeader('EXPERIENCE', fontBold, primary, subtleGray),
         ...p.workExperiences.map((exp) => pw.Padding(
@@ -4328,23 +4004,20 @@ Future<Uint8List> _buildAcademicStandard(CVProvider p) async {
         )),
         pw.SizedBox(height: 8),
       ],
-
       if (p.skills.isNotEmpty) ...[
         _acadHeader('TECHNICAL SKILLS', fontBold, primary, subtleGray),
-        // ---- NEW: Wrapped Grid Layout for Skills with Meters ----
         pw.Wrap(
-          spacing: 32, // Horizontal space between skills
-          runSpacing: 12, // Vertical space between rows
+          spacing: 32,
+          runSpacing: 12,
           children: p.skills.map((s) => pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Text(s.name, style: pw.TextStyle(font: fontBold, fontSize: 10, color: primary)),
               pw.SizedBox(height: 4),
-              _buildSkillMeter(s.level, primary, PdfColors.grey300), // Uses the same helper as Template 2
+              _buildSkillMeter(s.level, primary, PdfColors.grey300),
             ],
           )).toList(),
         ),
-        // ---------------------------------------------------------
       ],
     ],
   ));
@@ -4367,9 +4040,6 @@ pw.Widget _acadHeader(String title, pw.Font fontBold, PdfColor primary, PdfColor
     child: pw.Row(children: [pw.Text(title, style: pw.TextStyle(font: fontBold, fontSize: 11, color: primary, letterSpacing: 1.1))])
 );
 
-// =============================================================================
-// TEMPLATE 4: TECH MINIMALIST (Timeline Grid)
-// =============================================================================
 Future<Uint8List> _buildTechMinimalist(CVProvider p) async {
   final pdf = pw.Document();
   final font = pw.Font.helvetica();
@@ -4399,14 +4069,11 @@ Future<Uint8List> _buildTechMinimalist(CVProvider p) async {
           pw.SizedBox(height: 24),
         ],
       ),
-
       if (p.personalInfo.summary.isNotEmpty) ...[
         _techHeader('PROFILE', fontBold, primary),
         pw.Text(p.personalInfo.summary, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 10, lineSpacing: 1.5)),
         pw.SizedBox(height: 24),
       ],
-
-      // Timeline Experience
       if (p.workExperiences.isNotEmpty) ...[
         _techHeader('EXPERIENCE', fontBold, primary),
         ...p.workExperiences.map((exp) => pw.Padding(
@@ -4433,8 +4100,6 @@ Future<Uint8List> _buildTechMinimalist(CVProvider p) async {
         )),
         pw.SizedBox(height: 8),
       ],
-
-      // 2-Column Section for Details
       pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
@@ -4519,23 +4184,18 @@ pw.Widget _techHeader(String title, pw.Font fontBold, PdfColor color) => pw.Padd
   child: pw.Text(title, style: pw.TextStyle(font: fontBold, fontSize: 12, color: color, letterSpacing: 1.5)),
 );
 
-// =============================================================================
-// TEMPLATE 5: MANAGERIAL COMPACT (Executive Summary)
-// =============================================================================
 Future<Uint8List> _buildManagerialCompact(CVProvider p) async {
   final pdf = pw.Document();
   final font = pw.Font.helvetica();
   final fontBold = pw.Font.helveticaBold();
   final fontItalic = pw.Font.helveticaOblique();
-  const primary = PdfColor.fromInt(0xFF37474F); // Steel Blue
+  const primary = PdfColor.fromInt(0xFF37474F);
   const darkText = PdfColor.fromInt(0xFF263238);
 
-  // Changed to MultiPage so it breathes properly and doesn't crush text
   pdf.addPage(pw.MultiPage(
     pageFormat: PdfPageFormat.a4,
     margin: const pw.EdgeInsets.symmetric(horizontal: 46, vertical: 46),
     build: (ctx) => [
-      // ---- EXECUTIVE HEADER ----
       pw.Center(
         child: pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.center,
@@ -4560,14 +4220,10 @@ Future<Uint8List> _buildManagerialCompact(CVProvider p) async {
       pw.SizedBox(height: 16),
       pw.Divider(color: primary, thickness: 1.5),
       pw.SizedBox(height: 16),
-
-      // ---- SUMMARY ----
       if (p.personalInfo.summary.isNotEmpty) ...[
         pw.Text(p.personalInfo.summary, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 10, lineSpacing: 1.5, color: darkText)),
         pw.SizedBox(height: 18),
       ],
-
-      // ---- SKILLS (Moved up to act as a core competencies block) ----
       if (p.skills.isNotEmpty || p.languages.isNotEmpty) ...[
         _compactHeader('CORE COMPETENCIES', fontBold, primary),
         if (p.skills.isNotEmpty)
@@ -4585,8 +4241,6 @@ Future<Uint8List> _buildManagerialCompact(CVProvider p) async {
           ])),
         pw.SizedBox(height: 18),
       ],
-
-      // ---- EXPERIENCE ----
       if (p.workExperiences.isNotEmpty) ...[
         _compactHeader('PROFESSIONAL EXPERIENCE', fontBold, primary),
         ...p.workExperiences.map((exp) => pw.Padding(
@@ -4611,8 +4265,6 @@ Future<Uint8List> _buildManagerialCompact(CVProvider p) async {
         )),
         pw.SizedBox(height: 4),
       ],
-
-      // ---- PROJECTS ----
       if (p.projects.isNotEmpty) ...[
         _compactHeader('SELECTED PROJECTS', fontBold, primary),
         ...p.projects.map((proj) => pw.Padding(
@@ -4635,8 +4287,6 @@ Future<Uint8List> _buildManagerialCompact(CVProvider p) async {
         )),
         pw.SizedBox(height: 4),
       ],
-
-      // ---- EDUCATION ----
       if (p.educations.isNotEmpty) ...[
         _compactHeader('EDUCATION', fontBold, primary),
         ...p.educations.map((edu) => pw.Padding(
@@ -4705,24 +4355,28 @@ class SavedCVsScreen extends StatelessWidget {
     final savedCVs = context.watch<CVProvider>().savedCVs;
 
     return Scaffold(
+      backgroundColor: AppTheme.bgSurface,
       appBar: AppBar(title: const Text('Saved CVs')),
       body: savedCVs.isEmpty
-          ? const Center(
+          ? Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.folder_open_outlined,
-                size: 64, color: AppTheme.textSecondary),
-            SizedBox(height: 16),
-            Text(
-              'No saved CVs yet',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textSecondary),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppTheme.divider.withOpacity(0.5),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.folder_open_outlined, size: 48, color: AppTheme.textMuted),
             ),
-            SizedBox(height: 8),
-            Text(
+            const SizedBox(height: 20),
+            const Text(
+              'No saved CVs yet',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppTheme.textPrimary),
+            ),
+            const SizedBox(height: 8),
+            const Text(
               'Create and generate a CV to see it here.',
               style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
             ),
@@ -4734,91 +4388,129 @@ class SavedCVsScreen extends StatelessWidget {
         itemCount: savedCVs.length,
         itemBuilder: (context, index) {
           final cv = savedCVs[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: AppConstants.templates.firstWhere(
-                      (t) => t.name == cv.templateName,
-                  orElse: () => AppConstants.templates.first,
-                ).primaryColor,
-                child: const Icon(Icons.description,
-                    color: Colors.white, size: 20),
-              ),
-              title: Text(cv.name,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w600, fontSize: 14)),
-              subtitle: Text(
-                cv.isDraft
-                    ? 'Draft-Last saved: ${cv.savedAt}'
-                    : '${cv.templateName}-${cv.savedAt}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: cv.isDraft ? AppTheme.accentGold : AppTheme.textSecondary,
-                  fontWeight: cv.isDraft ? FontWeight.w600 : FontWeight.normal,
+          final templateColor = AppConstants.templates.firstWhere(
+                (t) => t.name == cv.templateName,
+            orElse: () => AppConstants.templates.first,
+          ).primaryColor;
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.divider),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
                 children: [
-                  // ---- RESUME EDITING BUTTON ----
-                  IconButton(
-                    icon: const Icon(Icons.edit_document, size: 20, color: AppTheme.primaryBlue),
-                    tooltip: 'Resume Editing',
-                    onPressed: () {
-                      context.read<CVProvider>().loadCV(cv);
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen()));
-                    },
-                  ),
-
-                  // ---- SHARE BUTTON (Only if it has a PDF file) ----
-                  if (cv.filePath != null)
-                    IconButton(
-                      icon: const Icon(Icons.share_outlined, size: 20, color: AppTheme.primaryBlue),
-                      tooltip: 'Share PDF',
-                      onPressed: () async {
-                        final file = File(cv.filePath!);
-                        if (await file.exists()) {
-                          await Printing.sharePdf(
-                            bytes: await file.readAsBytes(),
-                            filename: '${cv.name}.pdf',
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('File not found')),
-                          );
-                        }
-                      },
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: cv.isDraft
+                          ? AppTheme.accentGold.withOpacity(0.1)
+                          : templateColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-
-                  // ---- DELETE BUTTON ----
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                    tooltip: 'Delete',
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          title: const Text('Delete CV'),
-                          content: Text('Are you sure you want to delete "${cv.name}"?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx),
-                              child: const Text('Cancel'),
-                            ),
-                            ElevatedButton(
-                              onPressed: () {
-                                context.read<CVProvider>().removeSavedCV(cv.id);
-                                Navigator.pop(ctx);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red),
-                              child: const Text('Delete'),
-                            ),
-                          ],
+                    child: Icon(
+                      cv.isDraft ? Icons.edit_document : Icons.description,
+                      color: cv.isDraft ? AppTheme.accentGold : templateColor,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(cv.name,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                color: AppTheme.textPrimary)),
+                        const SizedBox(height: 3),
+                        Text(
+                          cv.isDraft
+                              ? 'Draft · Last saved: ${cv.savedAt}'
+                              : '${cv.templateName} · ${cv.savedAt}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: cv.isDraft ? AppTheme.accentGold : AppTheme.textSecondary,
+                            fontWeight: cv.isDraft ? FontWeight.w600 : FontWeight.normal,
+                          ),
                         ),
-                      );
-                    },
+                      ],
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _IconAction(
+                        icon: Icons.edit_document,
+                        color: AppTheme.primaryBlue,
+                        tooltip: 'Resume Editing',
+                        onTap: () {
+                          context.read<CVProvider>().loadCV(cv);
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const FormScreen()));
+                        },
+                      ),
+                      if (cv.filePath != null)
+                        _IconAction(
+                          icon: Icons.share_outlined,
+                          color: AppTheme.primaryBlue,
+                          tooltip: 'Share PDF',
+                          onTap: () async {
+                            final file = File(cv.filePath!);
+                            if (await file.exists()) {
+                              await Printing.sharePdf(
+                                bytes: await file.readAsBytes(),
+                                filename: '${cv.name}.pdf',
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('File not found')),
+                              );
+                            }
+                          },
+                        ),
+                      _IconAction(
+                        icon: Icons.delete_outline,
+                        color: Colors.red,
+                        tooltip: 'Delete',
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              title: const Text('Delete CV', style: TextStyle(fontWeight: FontWeight.w700)),
+                              content: Text('Are you sure you want to delete "${cv.name}"?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx),
+                                  child: const Text('Cancel'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    context.read<CVProvider>().removeSavedCV(cv.id);
+                                    Navigator.pop(ctx);
+                                  },
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                  child: const Text('Delete'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -4830,11 +4522,43 @@ class SavedCVsScreen extends StatelessWidget {
   }
 }
 
+class _IconAction extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _IconAction({
+    required this.icon,
+    required this.color,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.only(left: 6),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Icon(icon, size: 17, color: color),
+        ),
+      ),
+    );
+  }
+}
+
 // =============================================================================
 // SECTION 12 — SHARED / UTILITY WIDGETS
 // =============================================================================
 
-/// Reusable section header for form steps
 class _SectionHeader extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -4851,24 +4575,30 @@ class _SectionHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.primaryBlue.withOpacity(0.08),
-            AppTheme.primaryBlue.withOpacity(0.03),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.15)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppTheme.primaryBlue,
-              borderRadius: BorderRadius.circular(10),
+              gradient: const LinearGradient(
+                colors: [AppTheme.primaryBlue, AppTheme.primaryBlueDark],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: Colors.white, size: 22),
+            child: Icon(icon, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 14),
           Column(
@@ -4876,12 +4606,14 @@ class _SectionHeader extends StatelessWidget {
             children: [
               Text(title,
                   style: const TextStyle(
-                      fontSize: 17,
+                      fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: AppTheme.textPrimary)),
+              const SizedBox(height: 2),
               Text(subtitle,
                   style: const TextStyle(
-                      fontSize: 12, color: AppTheme.textSecondary)),
+                      fontSize: 12,
+                      color: AppTheme.textSecondary)),
             ],
           ),
         ],
@@ -4890,7 +4622,47 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-/// Persistent text field with proper controller handling
+class _AddButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _AddButton({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryBlue.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppTheme.primaryBlue.withOpacity(0.3),
+            style: BorderStyle.solid,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add_circle_outline, size: 18, color: AppTheme.primaryBlue),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                color: AppTheme.primaryBlue,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _FormField extends StatefulWidget {
   final String label;
   final String hint;
@@ -4940,19 +4712,15 @@ class _FormFieldState extends State<_FormField> {
         decoration: InputDecoration(
           labelText: widget.label,
           hintText: widget.hint,
-          border: const OutlineInputBorder(),
         ),
         maxLines: widget.maxLines,
         keyboardType: widget.keyboardType,
-        textDirection: TextDirection.ltr, // ensures left-to-right typing
+        textDirection: TextDirection.ltr,
       ),
     );
   }
 }
 
-
-
-/// Collapsible card for experience, education, project entries
 class _CollapsibleCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -4972,15 +4740,27 @@ class _CollapsibleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         children: [
           InkWell(
             onTap: onToggle,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
               child: Row(
                 children: [
                   Expanded(
@@ -5000,25 +4780,40 @@ class _CollapsibleCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline,
-                        size: 18, color: Colors.red),
-                    onPressed: onDelete,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                  GestureDetector(
+                    onTap: onDelete,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.07),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  Icon(
-                    expanded ? Icons.expand_less : Icons.expand_more,
-                    color: AppTheme.textSecondary,
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.bgSurface,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      expanded ? Icons.expand_less : Icons.expand_more,
+                      color: AppTheme.textSecondary,
+                      size: 18,
+                    ),
                   ),
                 ],
               ),
             ),
           ),
           if (expanded)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            Container(
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: AppTheme.divider)),
+              ),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
               child: child,
             ),
         ],
@@ -5027,7 +4822,6 @@ class _CollapsibleCard extends StatelessWidget {
   }
 }
 
-/// Empty state hint displayed when a list is empty
 class _EmptyStateHint extends StatelessWidget {
   final IconData icon;
   final String text;
@@ -5038,12 +4832,22 @@ class _EmptyStateHint extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, size: 48, color: AppTheme.dividerColor),
-        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppTheme.divider.withOpacity(0.5),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 36, color: AppTheme.textMuted),
+        ),
+        const SizedBox(height: 14),
         Text(
           text,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13, height: 1.5),
+          style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 13,
+              height: 1.6),
         ),
       ],
     );
