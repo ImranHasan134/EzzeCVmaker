@@ -104,7 +104,7 @@ class _SplashScreenState extends State<SplashScreen> {
                           style: TextStyle(
                             fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 1.2,
                             foreground: Paint()..shader = const LinearGradient(
-                              colors: [Color(0xFF56D0ED), Color(0xFF0E0EDA)],
+                              colors: [Color(0xFF3BA4BA), Color(0xFF4044FA)],
                               begin: Alignment.topCenter, end: Alignment.bottomCenter,
                             ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0)),
                           ),

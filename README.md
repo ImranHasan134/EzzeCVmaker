@@ -1,74 +1,69 @@
-# 📄 EzzeCVmaker – Offline CV Builder App
+# 📄 EzzeCV — Build Your Career Story
 
-A powerful and fully offline CV/Resume builder built using **Flutter**.  
-EzzeCVmaker allows users to create, customize, and export professional resumes directly from their device — without needing any internet connection.
+![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)
+![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)
+![Offline](https://img.shields.io/badge/100%25_Offline-Success?style=for-the-badge)
+![Privacy](https://img.shields.io/badge/Privacy_First-blueviolet?style=for-the-badge)
 
----
-
-## 🚀 Features
-
-- 📱 100% Offline Functionality  
-- 🧾 Multiple Professional CV Templates (5 Types)  
-- ✍️ Step-by-step Form Input System  
-- 📂 Save & Manage Generated CVs  
-- 📤 Export as PDF  
-- 💾 Backup Data as JSON  
-- 🎨 Clean UI/UX with Modern Design  
-- ⚡ Fast On-Device PDF Rendering  
+**EzzeCV** is a premium, fully offline CV & resume builder built with Flutter.  
+Create professional, ATS-friendly resumes directly on your device — no internet, no cloud, complete privacy.
 
 ---
 
-## 🧠 How It Works
+## ✨ Key Features
 
-EzzeCVmaker does **not use any external API** for generating resumes.
-
-Instead, it uses:
-
-- `provider` → State management  
-- `pdf` → Programmatic PDF generation  
-- `printing` → Preview & share PDF  
-- `path_provider` → Local file storage  
-
-👉 The app dynamically converts user input into a **PDF layout using a widget-based rendering system**.
+- 🔒 **100% Offline & Private** — No backend, no data collection
+- 🎨 **5 Premium Templates** — ATS, Corporate, Academic, Tech, Managerial
+- 🖌️ **Live Customization** — Colors & fonts with real-time preview
+- 🖼️ **Profile Image Cropper** — Perfect 1:1 avatar support
+- 💾 **Local Draft Saving** — Stored directly on device
+- 🔄 **JSON Backup** — Export & restore data easily
+- 🌓 **Dark / Light Mode**
+- 🌐 **Bilingual UI** — English & Bengali
 
 ---
 
 ## 🛠️ Tech Stack
 
-- Flutter (Dart)  
-- Provider (State Management)  
-- PDF & Printing Packages  
-- Local Storage (File System)  
+- **Flutter (Dart)**
+- **Provider** (State Management)
+- **PDF & Printing**
+- **Local File Storage**
+- **Image Picker & Cropper**
 
 ---
 
-## 📦 Dependencies
+## 🚀 Getting Started
 
-yaml
--provider: ^6.1.1
--pdf: ^3.10.8
--printing: ^5.12.0
--path_provider: ^2.1.2
-
----
-
-## 📥 Installation
-
-git clone https://github.com/ImranHasan13421/ezzecvmaker.git
-cd ezzecvmaker
+```bash
+git clone https://github.com/yourusername/ezzecv.git
+cd ezzecv
 flutter pub get
 flutter run
+```
 
 ---
 
-## 💡 Key Highlights
+## 📂 Project Structure
 
-Fully offline CV generation
-Uses custom PDF templates
-Stores data locally for privacy & security
-Designed for students & job seekers
+```
+lib/
+├── core.dart
+├── models.dart
+├── cv_provider.dart
+├── pdf_generator.dart
+├── screens/
+└── main.dart
+```
 
 ---
-## 🧑‍💻 Author
 
-MD. Imran Hasan
+## 🤝 Contributing
+
+Contributions and ideas are welcome.  
+You can extend templates via `pdf_generator.dart`.
+
+---
+
+
+**Developed by Ezze Softwares**
