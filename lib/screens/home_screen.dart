@@ -23,7 +23,7 @@ class HomeScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(context, provider, lang),
+            _buildHeader(context, provider, lang, isDark),
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
@@ -56,7 +56,13 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, CVProvider provider, String lang) {
+  Widget _buildHeader(BuildContext context, CVProvider provider, String lang, bool isDark) {
+    // Dynamic Colors based on Theme
+    final textColor = isDark ? Colors.white : AppTheme.textPrimary;
+    final subTextColor = isDark ? Colors.white70 : AppTheme.textSecondary;
+    final iconBtnBg = isDark ? Colors.white.withOpacity(0.08) : AppTheme.primaryBlue.withOpacity(0.06);
+    final iconBtnBorder = isDark ? Colors.white.withOpacity(0.12) : AppTheme.primaryBlue.withOpacity(0.15);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
       child: Column(
@@ -70,27 +76,29 @@ class HomeScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(9),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFFCD34D)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                      gradient: const LinearGradient(colors: [Color(0xFF3BA4BA), Color(
+                          0xFF4044FA)], begin: Alignment.topLeft, end: Alignment.bottomRight),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.description_rounded, color: Color(0xFF0A0F1E), size: 20),
+                    child: const Icon(Icons.description_rounded, color: Color(
+                        0xFFFFFFFF), size: 20),
                   ),
                   const SizedBox(width: 10),
-                  const Text('EzzeCV', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                  Text('EzzeCV', style: TextStyle(color: textColor, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
                 ],
               ),
               Row(
                 children: [
                   IconButton(
-                    icon: Icon(provider.isAppDarkMode ? Icons.light_mode : Icons.dark_mode, size: 20, color: Colors.white70),
+                    icon: Icon(provider.isAppDarkMode ? Icons.light_mode : Icons.dark_mode, size: 20, color: Color(0xFF3BA4BA)),
                     onPressed: () => provider.toggleTheme(),
                   ),
                   TextButton(
                     onPressed: () => provider.toggleLanguage(),
-                    child: Text(provider.appLanguage, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
+                    child: Text(provider.appLanguage, style: TextStyle(color: subTextColor, fontWeight: FontWeight.bold)),
                   ),
                   Container(
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withOpacity(0.12))),
+                    decoration: BoxDecoration(color: iconBtnBg, borderRadius: BorderRadius.circular(12), border: Border.all(color: iconBtnBorder)),
                     child: IconButton(
                       onPressed: () async {
                         try {
@@ -108,7 +116,7 @@ class HomeScreen extends StatelessWidget {
                           if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to import file.'), backgroundColor: Colors.red));
                         }
                       },
-                      icon: const Icon(Icons.file_download_outlined, color: Colors.white70, size: 20),
+                      icon: Icon(Icons.file_download_outlined, color: Color(0xFF3BA4BA), size: 20),
                       tooltip: 'Import CV (.json)',
                     ),
                   ),
@@ -117,9 +125,9 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 22),
-          Text(AppLocalizations.translate('Build Your\nCareer Story', lang), style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800, height: 1.2, letterSpacing: -0.5)),
+          Text(AppLocalizations.translate('Build Your\nCareer Story', lang), style: TextStyle(color: textColor, fontSize: 28, fontWeight: FontWeight.w800, height: 1.2, letterSpacing: -0.5)),
           const SizedBox(height: 8),
-          Text(AppLocalizations.translate('Create professional CVs with ATS-friendly\ntemplates — 100% offline.', lang), style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 13, height: 1.6)),
+          Text(AppLocalizations.translate('Create professional CVs with ATS-friendly\ntemplates — 100% offline.', lang), style: TextStyle(color: subTextColor, fontSize: 13, height: 1.6)),
         ],
       ),
     );
@@ -162,6 +170,17 @@ class HomeScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _SectionLabel(label: AppLocalizations.translate('TEMPLATES', lang)),
+              GestureDetector(
+                onTap: () {
+                  context.read<CVProvider>().resetForm();
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const TemplateSelectionScreen()));
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.08), borderRadius: BorderRadius.circular(20)),
+                  child: const Text('See All', style: TextStyle(fontSize: 12, color: AppTheme.primaryBlue, fontWeight: FontWeight.w600)),
+                ),
+              ),
             ]
         ),
         const SizedBox(height: 14),
@@ -193,26 +212,31 @@ class HomeScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: isDark ? const LinearGradient(colors: [Color(0xFF451A03), Color(0xFF78350F)]) : const LinearGradient(colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        gradient: isDark ? const LinearGradient(colors: [Color(0xFF3BA4BA), Color(
+            0xFF4044FA)]) : const LinearGradient(colors: [Color(0xFFEBF0FF), Color(
+            0xFFC7FEF9)], begin: Alignment.topLeft, end: Alignment.bottomRight),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFCD34D).withOpacity(0.5)),
+        border: Border.all(color: const Color(0xFF4DEDFC).withOpacity(0.5)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: const Color(0xFFF59E0B).withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFF59E0B), size: 18),
+            decoration: BoxDecoration(color: const Color(0xFF4044FA).withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+            child: const Icon(Icons.lightbulb_outline_rounded, color: Color(
+                0xFF161BDF), size: 18),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(AppLocalizations.translate('Pro Tip', lang), style: TextStyle(fontWeight: FontWeight.w700, color: isDark ? const Color(0xFFFDE68A) : const Color(0xFFB45309), fontSize: 13)),
+                Text(AppLocalizations.translate('Pro Tip', lang), style: TextStyle(fontWeight: FontWeight.w700, color: isDark ? const Color(
+                    0xFFFFFFFF) : const Color(0xFF098CB4), fontSize: 13)),
                 const SizedBox(height: 4),
-                Text('Use the Classic ATS template when applying to large companies — it ensures your CV passes automated screening systems.', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF92400E), fontSize: 12, height: 1.5)),
+                Text('Use the Classic ATS template when applying to large companies — it ensures your CV passes automated screening systems.', style: TextStyle(color: isDark ? Colors.white70 : const Color(
+                    0xFF0E9287), fontSize: 12, height: 1.5)),
               ],
             ),
           ),
