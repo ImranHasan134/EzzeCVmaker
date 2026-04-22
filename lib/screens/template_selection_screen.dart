@@ -11,10 +11,14 @@ class TemplateSelectionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<CVProvider>();
     final selected = provider.selectedTemplateIndex;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppTheme.bgSurface,
-      appBar: AppBar(title: const Text('Choose Template')),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: const Text('Choose Template'),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+      ),
       body: Column(
         children: [
           Container(
@@ -47,9 +51,9 @@ class TemplateSelectionScreen extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: isSelected ? template.primaryColor : AppTheme.divider, width: isSelected ? 2 : 1),
-                      color: isSelected ? template.primaryColor.withOpacity(0.03) : Colors.white,
-                      boxShadow: isSelected ? [BoxShadow(color: template.primaryColor.withOpacity(0.12), blurRadius: 16, offset: const Offset(0, 6))] : [const BoxShadow(color: Color(0x08000000), blurRadius: 8, offset: Offset(0, 2))],
+                      border: Border.all(color: isSelected ? template.primaryColor : (isDark ? Colors.white12 : AppTheme.divider), width: isSelected ? 2 : 1),
+                      color: isSelected ? template.primaryColor.withOpacity(0.05) : Theme.of(context).cardColor,
+                      boxShadow: isDark ? null : (isSelected ? [BoxShadow(color: template.primaryColor.withOpacity(0.12), blurRadius: 16, offset: const Offset(0, 6))] : [const BoxShadow(color: Color(0x08000000), blurRadius: 8, offset: Offset(0, 2))]),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -75,7 +79,7 @@ class TemplateSelectionScreen extends StatelessWidget {
                               children: [
                                 Row(
                                   children: [
-                                    Flexible(child: Text(template.name, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: isSelected ? template.primaryColor : AppTheme.textPrimary))),
+                                    Flexible(child: Text(template.name, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: isSelected ? template.primaryColor : (isDark ? Colors.white : AppTheme.textPrimary)))),
                                     if (isSelected) ...[
                                       const SizedBox(width: 8),
                                       Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: template.primaryColor, borderRadius: BorderRadius.circular(20)), child: const Text('Selected', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600))),
@@ -83,12 +87,12 @@ class TemplateSelectionScreen extends StatelessWidget {
                                   ],
                                 ),
                                 const SizedBox(height: 5),
-                                Text(template.description, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary, height: 1.4)),
+                                Text(template.description, style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : AppTheme.textSecondary, height: 1.4)),
                               ],
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Icon(isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded, color: isSelected ? template.primaryColor : AppTheme.divider, size: 22),
+                          Icon(isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded, color: isSelected ? template.primaryColor : (isDark ? Colors.white24 : AppTheme.divider), size: 22),
                         ],
                       ),
                     ),
@@ -99,7 +103,7 @@ class TemplateSelectionScreen extends StatelessWidget {
           ),
           Container(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: AppTheme.divider))),
+            decoration: BoxDecoration(color: Theme.of(context).cardColor, border: Border(top: BorderSide(color: isDark ? Colors.white12 : AppTheme.divider))),
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(

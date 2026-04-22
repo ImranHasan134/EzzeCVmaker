@@ -28,6 +28,11 @@ dependencies:
   # Icons
   cupertino_icons: ^1.0.6
 
+  permission_handler: ^11.3.0
+  image_picker: ^1.2.1
+  image_cropper: ^8.0.2
+  shared_preferences: ^2.5.5
+
 dev_dependencies:
   flutter_launcher_icons: ^0.13.1
   flutter_test:

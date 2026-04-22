@@ -12,10 +12,14 @@ class SavedCVsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final savedCVs = context.watch<CVProvider>().savedCVs;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppTheme.bgSurface,
-      appBar: AppBar(title: const Text('Saved CVs')),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: const Text('Saved CVs'),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+      ),
       body: savedCVs.isEmpty
           ? Center(
         child: Column(
@@ -23,13 +27,13 @@ class SavedCVsScreen extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(color: AppTheme.divider.withOpacity(0.5), shape: BoxShape.circle),
-              child: const Icon(Icons.folder_open_outlined, size: 48, color: AppTheme.textMuted),
+              decoration: BoxDecoration(color: isDark ? Colors.white12 : AppTheme.divider.withOpacity(0.5), shape: BoxShape.circle),
+              child: Icon(Icons.folder_open_outlined, size: 48, color: isDark ? Colors.white54 : AppTheme.textMuted),
             ),
             const SizedBox(height: 20),
-            const Text('No saved CVs yet', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+            Text('No saved CVs yet', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: isDark ? Colors.white : AppTheme.textPrimary)),
             const SizedBox(height: 8),
-            const Text('Create and generate a CV to see it here.', style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+            Text('Create and generate a CV to see it here.', style: TextStyle(color: isDark ? Colors.white70 : AppTheme.textSecondary, fontSize: 13)),
           ],
         ),
       )
@@ -46,9 +50,9 @@ class SavedCVsScreen extends StatelessWidget {
           return Container(
             margin: const EdgeInsets.only(bottom: 10),
             decoration: BoxDecoration(
-              color: Colors.white, borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.divider),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
+              color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: isDark ? Colors.white12 : AppTheme.divider),
+              boxShadow: isDark ? null : [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -57,7 +61,7 @@ class SavedCVsScreen extends StatelessWidget {
                   Container(
                     width: 44, height: 44,
                     decoration: BoxDecoration(
-                      color: cv.isDraft ? AppTheme.accentGold.withOpacity(0.1) : templateColor.withOpacity(0.1),
+                      color: cv.isDraft ? AppTheme.accentGold.withOpacity(0.12) : templateColor.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(cv.isDraft ? Icons.edit_document : Icons.description, color: cv.isDraft ? AppTheme.accentGold : templateColor, size: 20),
@@ -67,11 +71,11 @@ class SavedCVsScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(cv.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppTheme.textPrimary)),
+                        Text(cv.name, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: isDark ? Colors.white : AppTheme.textPrimary)),
                         const SizedBox(height: 3),
                         Text(
                           cv.isDraft ? 'Draft · Last saved: ${cv.savedAt}' : '${cv.templateName} · ${cv.savedAt}',
-                          style: TextStyle(fontSize: 11, color: cv.isDraft ? AppTheme.accentGold : AppTheme.textSecondary, fontWeight: cv.isDraft ? FontWeight.w600 : FontWeight.normal),
+                          style: TextStyle(fontSize: 11, color: cv.isDraft ? AppTheme.accentGold : (isDark ? Colors.white54 : AppTheme.textSecondary), fontWeight: cv.isDraft ? FontWeight.w600 : FontWeight.normal),
                         ),
                       ],
                     ),
@@ -105,8 +109,9 @@ class SavedCVsScreen extends StatelessWidget {
                             context: context,
                             builder: (ctx) => AlertDialog(
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                              title: const Text('Delete CV', style: TextStyle(fontWeight: FontWeight.w700)),
-                              content: Text('Are you sure you want to delete "${cv.name}"?'),
+                              backgroundColor: Theme.of(context).cardColor,
+                              title: Text('Delete CV', style: TextStyle(fontWeight: FontWeight.w700, color: isDark ? Colors.white : Colors.black)),
+                              content: Text('Are you sure you want to delete "${cv.name}"?', style: TextStyle(color: isDark ? Colors.white70 : Colors.black87)),
                               actions: [
                                 TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
                                 ElevatedButton(
@@ -142,7 +147,7 @@ class _IconAction extends StatelessWidget {
         onTap: onTap,
         child: Container(
           margin: const EdgeInsets.only(left: 6), padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(9)),
+          decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(9)),
           child: Icon(icon, size: 17, color: color),
         ),
       ),

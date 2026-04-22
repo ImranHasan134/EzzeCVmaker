@@ -19,10 +19,14 @@ class EzzeCVApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<CVProvider>().isAppDarkMode;
+
     return MaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
       home: const SplashScreen(),
     );
   }
