@@ -1,4 +1,4 @@
-name: ezzecv
+name: EzzeCV
 description: EzzeCV - Offline CV Builder App
 
 publish_to: 'none'
@@ -34,10 +34,12 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^3.0.0
 
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+
 flutter:
   uses-material-design: true
-
-flutter_icons:
-    android: true
-    ios: true
-    image_path: "assets/icon/app_icon.png"
+  assets:
+    - assets/icon/splash.gif

@@ -125,6 +125,7 @@ Future<Uint8List> buildPDF(CVProvider provider) async {
   }
 }
 
+// Global SVG Icons for Non-ATS Templates
 const _svgPhone = 'M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z';
 const _svgMail = 'M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z';
 const _svgLoc = 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z';
@@ -137,11 +138,23 @@ pw.Widget _drawIcon(String path, PdfColor color, {double size = 10}) {
   );
 }
 
+// =============================================================================
+// 1. EXECUTIVE ATS (Strictly Standardized for Bots & Parsing)
+// NO Icons, Strict Linear Hierarchy, Times New Roman, Pipe Separators
+// =============================================================================
 Future<Uint8List> _buildExecutiveATS(CVProvider p) async {
   final pdf = pw.Document();
   final font = pw.Font.times();
   final fontBold = pw.Font.timesBold();
   final fontItalic = pw.Font.timesItalic();
+
+  // ATS Contact Builder
+  List<String> contactParts = [];
+  if (p.personalInfo.location.isNotEmpty) contactParts.add(p.personalInfo.location);
+  if (p.personalInfo.phone.isNotEmpty) contactParts.add(p.personalInfo.phone);
+  if (p.personalInfo.email.isNotEmpty) contactParts.add(p.personalInfo.email);
+  if (p.personalInfo.linkedin.isNotEmpty) contactParts.add(p.personalInfo.linkedin);
+  String contactString = contactParts.join('  |  ');
 
   pdf.addPage(pw.MultiPage(
     pageFormat: PdfPageFormat.a4,
@@ -150,47 +163,24 @@ Future<Uint8List> _buildExecutiveATS(CVProvider p) async {
       pw.Center(
         child: pw.Column(
           children: [
-            pw.Text(p.personalInfo.fullName.toUpperCase(), style: pw.TextStyle(font: fontBold, fontSize: 18)),
+            pw.Text(p.personalInfo.fullName.toUpperCase(), style: pw.TextStyle(font: fontBold, fontSize: 20)),
+            if (p.personalInfo.jobTitle.isNotEmpty) ...[
+              pw.SizedBox(height: 4),
+              pw.Text(p.personalInfo.jobTitle, style: pw.TextStyle(font: font, fontSize: 12)),
+            ],
             pw.SizedBox(height: 6),
-            pw.Wrap(
-              alignment: pw.WrapAlignment.center,
-              spacing: 8, runSpacing: 4,
-              children: [
-                if (p.personalInfo.location.isNotEmpty)
-                  pw.Row(mainAxisSize: pw.MainAxisSize.min, children: [
-                    _drawIcon(_svgLoc, PdfColors.grey800, size: 9),
-                    pw.SizedBox(width: 4),
-                    pw.Text(p.personalInfo.location, style: pw.TextStyle(font: font, fontSize: 10)),
-                  ]),
-                if (p.personalInfo.phone.isNotEmpty)
-                  pw.Row(mainAxisSize: pw.MainAxisSize.min, children: [
-                    _drawIcon(_svgPhone, PdfColors.grey800, size: 9),
-                    pw.SizedBox(width: 4),
-                    pw.Text(p.personalInfo.phone, style: pw.TextStyle(font: font, fontSize: 10)),
-                  ]),
-                if (p.personalInfo.email.isNotEmpty)
-                  pw.Row(mainAxisSize: pw.MainAxisSize.min, children: [
-                    _drawIcon(_svgMail, PdfColors.grey800, size: 9),
-                    pw.SizedBox(width: 4),
-                    pw.Text(p.personalInfo.email, style: pw.TextStyle(font: font, fontSize: 10)),
-                  ]),
-                if (p.personalInfo.linkedin.isNotEmpty)
-                  pw.Row(mainAxisSize: pw.MainAxisSize.min, children: [
-                    _drawIcon(_svgLink, PdfColors.grey800, size: 9),
-                    pw.SizedBox(width: 4),
-                    pw.Text(p.personalInfo.linkedin, style: pw.TextStyle(font: font, fontSize: 10)),
-                  ]),
-              ],
-            ),
+            pw.Text(contactString, style: pw.TextStyle(font: font, fontSize: 10)),
           ],
         ),
       ),
       pw.SizedBox(height: 18),
+
       if (p.personalInfo.summary.isNotEmpty) ...[
-        _atsHeader('SUMMARY', fontBold),
+        _atsHeader('PROFESSIONAL SUMMARY', fontBold),
         pw.Text(p.personalInfo.summary, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 11, lineSpacing: 1.5)),
         pw.SizedBox(height: 16),
       ],
+
       if (p.workExperiences.isNotEmpty) ...[
         _atsHeader('PROFESSIONAL EXPERIENCE', fontBold),
         ...p.workExperiences.map((exp) => pw.Padding(
@@ -202,7 +192,7 @@ Future<Uint8List> _buildExecutiveATS(CVProvider p) async {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text(exp.position, style: pw.TextStyle(font: fontBold, fontSize: 11)),
-                  pw.Text('${exp.startDate} - ${exp.isCurrentJob ? 'Present' : exp.endDate}', style: pw.TextStyle(font: font, fontSize: 10)),
+                  pw.Text('${exp.startDate} - ${exp.isCurrentJob ? 'Present' : exp.endDate}', style: pw.TextStyle(font: fontBold, fontSize: 11)),
                 ],
               ),
               pw.SizedBox(height: 2),
@@ -215,6 +205,7 @@ Future<Uint8List> _buildExecutiveATS(CVProvider p) async {
         )),
         pw.SizedBox(height: 6),
       ],
+
       if (p.educations.isNotEmpty) ...[
         _atsHeader('EDUCATION', fontBold),
         ...p.educations.map((edu) => pw.Padding(
@@ -245,6 +236,7 @@ Future<Uint8List> _buildExecutiveATS(CVProvider p) async {
         )),
         pw.SizedBox(height: 6),
       ],
+
       if (p.projects.isNotEmpty) ...[
         _atsHeader('PROJECTS', fontBold),
         ...p.projects.map((proj) => pw.Padding(
@@ -264,13 +256,14 @@ Future<Uint8List> _buildExecutiveATS(CVProvider p) async {
         )),
         pw.SizedBox(height: 6),
       ],
+
       if (p.skills.isNotEmpty || p.languages.isNotEmpty) ...[
         _atsHeader('ADDITIONAL INFORMATION', fontBold),
         if (p.skills.isNotEmpty)
           pw.Padding(
             padding: const pw.EdgeInsets.only(bottom: 6),
             child: pw.RichText(text: pw.TextSpan(children: [
-              pw.TextSpan(text: 'Technical Skills: ', style: pw.TextStyle(font: fontBold, fontSize: 11)),
+              pw.TextSpan(text: 'Skills: ', style: pw.TextStyle(font: fontBold, fontSize: 11)),
               pw.TextSpan(text: p.skills.map((s) => s.name).join(', '), style: pw.TextStyle(font: font, fontSize: 11)),
             ])),
           ),
@@ -288,11 +281,16 @@ Future<Uint8List> _buildExecutiveATS(CVProvider p) async {
 pw.Widget _atsHeader(String title, pw.Font fontBold) => pw.Column(
   crossAxisAlignment: pw.CrossAxisAlignment.start,
   children: [
-    pw.Text(title, style: pw.TextStyle(font: fontBold, fontSize: 12, letterSpacing: 0.5)),
+    pw.Text(title, style: pw.TextStyle(font: fontBold, fontSize: 11, letterSpacing: 0.5)),
     pw.Container(height: 1, color: PdfColors.black, margin: const pw.EdgeInsets.only(top: 4, bottom: 12)),
   ],
 );
 
+
+// =============================================================================
+// 2. CORPORATE MODERN (Visual Focus)
+// 30/70 Split, Icons, Progress Bars, Helvetica
+// =============================================================================
 Future<Uint8List> _buildCorporateModern(CVProvider p) async {
   final pdf = pw.Document();
   final font = pw.Font.helvetica();
@@ -300,6 +298,7 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
   const primaryText = PdfColor.fromInt(0xFF2C3E50);
   const secondaryText = PdfColor.fromInt(0xFF5D6D7E);
   const sidebarBg = PdfColor.fromInt(0xFFF4F6F7);
+  const accentColor = PdfColor.fromInt(0xFF3498DB);
   const emptyDotColor = PdfColor.fromInt(0xFFD5DBDB);
 
   pdf.addPage(pw.MultiPage(
@@ -318,22 +317,24 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
       pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
+          // Sidebar (30%)
           pw.Container(
-            width: 200,
-            padding: const pw.EdgeInsets.all(30),
+            width: 190,
+            padding: const pw.EdgeInsets.all(28),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text('CONTACT', style: pw.TextStyle(font: fontBold, fontSize: 10, color: primaryText, letterSpacing: 1.5)),
-                pw.SizedBox(height: 16),
+                pw.SizedBox(height: 10),
+                pw.Text('CONTACT', style: pw.TextStyle(font: fontBold, fontSize: 11, color: primaryText, letterSpacing: 1.5)),
+                pw.Container(height: 1.5, width: 24, color: accentColor, margin: const pw.EdgeInsets.only(top: 4, bottom: 16)),
                 if (p.personalInfo.email.isNotEmpty) _modContact(_svgMail, p.personalInfo.email, font, primaryText),
                 if (p.personalInfo.phone.isNotEmpty) _modContact(_svgPhone, p.personalInfo.phone, font, primaryText),
                 if (p.personalInfo.location.isNotEmpty) _modContact(_svgLoc, p.personalInfo.location, font, primaryText),
                 if (p.personalInfo.linkedin.isNotEmpty) _modContact(_svgLink, p.personalInfo.linkedin, font, primaryText),
                 if (p.skills.isNotEmpty) ...[
-                  pw.SizedBox(height: 30),
-                  pw.Text('SKILLS', style: pw.TextStyle(font: fontBold, fontSize: 10, color: primaryText, letterSpacing: 1.5)),
-                  pw.SizedBox(height: 16),
+                  pw.SizedBox(height: 24),
+                  pw.Text('SKILLS', style: pw.TextStyle(font: fontBold, fontSize: 11, color: primaryText, letterSpacing: 1.5)),
+                  pw.Container(height: 1.5, width: 24, color: accentColor, margin: const pw.EdgeInsets.only(top: 4, bottom: 16)),
                   ...p.skills.map((s) => pw.Padding(
                       padding: const pw.EdgeInsets.only(bottom: 12),
                       child: pw.Column(
@@ -341,15 +342,15 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
                           children: [
                             pw.Text(s.name, style: pw.TextStyle(font: font, fontSize: 10, color: primaryText)),
                             pw.SizedBox(height: 4),
-                            _buildSkillMeter(s.level, primaryText, emptyDotColor),
+                            _buildSkillMeter(s.level, accentColor, emptyDotColor),
                           ]
                       )
                   )),
                 ],
                 if (p.languages.isNotEmpty) ...[
-                  pw.SizedBox(height: 24),
-                  pw.Text('LANGUAGES', style: pw.TextStyle(font: fontBold, fontSize: 10, color: primaryText, letterSpacing: 1.5)),
-                  pw.SizedBox(height: 16),
+                  pw.SizedBox(height: 20),
+                  pw.Text('LANGUAGES', style: pw.TextStyle(font: fontBold, fontSize: 11, color: primaryText, letterSpacing: 1.5)),
+                  pw.Container(height: 1.5, width: 24, color: accentColor, margin: const pw.EdgeInsets.only(top: 4, bottom: 16)),
                   ...p.languages.map((l) => pw.Padding(
                     padding: const pw.EdgeInsets.only(bottom: 8),
                     child: pw.Text(l, style: pw.TextStyle(font: font, fontSize: 10, color: primaryText)),
@@ -358,20 +359,24 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
               ],
             ),
           ),
+
+          // Main Body (70%)
           pw.Expanded(
             child: pw.Padding(
-              padding: const pw.EdgeInsets.fromLTRB(40, 40, 40, 40),
+              padding: const pw.EdgeInsets.fromLTRB(36, 40, 40, 40),
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   pw.Text(p.personalInfo.fullName.toUpperCase(), style: pw.TextStyle(font: fontBold, fontSize: 26, color: primaryText)),
-                  pw.SizedBox(height: 6),
-                  pw.Text(p.personalInfo.jobTitle, style: pw.TextStyle(font: fontBold, fontSize: 12, color: secondaryText, letterSpacing: 1.2)),
+                  pw.SizedBox(height: 4),
+                  pw.Text(p.personalInfo.jobTitle, style: pw.TextStyle(font: font, fontSize: 13, color: accentColor, letterSpacing: 1.2)),
                   pw.SizedBox(height: 24),
+
                   if (p.personalInfo.summary.isNotEmpty) ...[
                     pw.Text(p.personalInfo.summary, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 10, color: primaryText, lineSpacing: 1.5)),
                     pw.SizedBox(height: 28),
                   ],
+
                   if (p.workExperiences.isNotEmpty) ...[
                     _modHeader('EXPERIENCE', fontBold, primaryText),
                     ...p.workExperiences.map((exp) => pw.Padding(
@@ -380,11 +385,11 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text(exp.position, style: pw.TextStyle(font: fontBold, fontSize: 12, color: primaryText)),
-                          pw.SizedBox(height: 4),
+                          pw.SizedBox(height: 2),
                           pw.Row(
                             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                             children: [
-                              pw.Text(exp.company, style: pw.TextStyle(font: fontBold, fontSize: 10, color: secondaryText)),
+                              pw.Text(exp.company, style: pw.TextStyle(font: fontBold, fontSize: 10, color: accentColor)),
                               pw.Text('${exp.startDate} - ${exp.isCurrentJob ? 'Present' : exp.endDate}', style: pw.TextStyle(font: font, fontSize: 10, color: secondaryText)),
                             ],
                           ),
@@ -395,6 +400,7 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
                       ),
                     )),
                   ],
+
                   if (p.educations.isNotEmpty) ...[
                     pw.SizedBox(height: 10),
                     _modHeader('EDUCATION', fontBold, primaryText),
@@ -404,7 +410,7 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text(edu.degree, style: pw.TextStyle(font: fontBold, fontSize: 11, color: primaryText)),
-                          pw.SizedBox(height: 4),
+                          pw.SizedBox(height: 2),
                           pw.Row(
                             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                             children: [
@@ -416,6 +422,7 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
                       ),
                     )),
                   ],
+
                   if (p.projects.isNotEmpty) ...[
                     pw.SizedBox(height: 10),
                     _modHeader('PROJECTS', fontBold, primaryText),
@@ -425,8 +432,8 @@ Future<Uint8List> _buildCorporateModern(CVProvider p) async {
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text(proj.name, style: pw.TextStyle(font: fontBold, fontSize: 11, color: primaryText)),
-                          pw.SizedBox(height: 4),
-                          if (proj.technologies.isNotEmpty) pw.Text('Tech: ${proj.technologies}', style: pw.TextStyle(font: font, fontSize: 9, color: secondaryText)),
+                          pw.SizedBox(height: 2),
+                          if (proj.technologies.isNotEmpty) pw.Text('Tech: ${proj.technologies}', style: pw.TextStyle(font: font, fontSize: 9, color: accentColor)),
                           pw.SizedBox(height: 4),
                           if (proj.description.isNotEmpty)
                             pw.Text(proj.description, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 10, color: primaryText, lineSpacing: 1.5)),
@@ -451,8 +458,8 @@ pw.Widget _buildSkillMeter(int level, PdfColor filledColor, PdfColor emptyColor)
     children: List.generate(5, (index) {
       return pw.Container(
         margin: const pw.EdgeInsets.only(right: 5),
-        width: 4, height: 4,
-        decoration: pw.BoxDecoration(shape: pw.BoxShape.circle, color: index < level ? filledColor : emptyColor),
+        width: 14, height: 4,
+        decoration: pw.BoxDecoration(color: index < level ? filledColor : emptyColor),
       );
     }),
   );
@@ -473,11 +480,16 @@ pw.Widget _modContact(String iconSvg, String text, pw.Font font, PdfColor color)
 pw.Widget _modHeader(String title, pw.Font fontBold, PdfColor color) => pw.Column(
   crossAxisAlignment: pw.CrossAxisAlignment.start,
   children: [
-    pw.Text(title, style: pw.TextStyle(font: fontBold, fontSize: 12, color: color, letterSpacing: 1.2)),
+    pw.Text(title, style: pw.TextStyle(font: fontBold, fontSize: 14, color: color, letterSpacing: 1.2)),
     pw.Container(height: 1.5, color: color, margin: const pw.EdgeInsets.only(top: 6, bottom: 18)),
   ],
 );
 
+
+// =============================================================================
+// 3. ACADEMIC STANDARD (Fresher Focus)
+// Order: Education -> Projects -> Experience. Clean horizontal layout.
+// =============================================================================
 Future<Uint8List> _buildAcademicStandard(CVProvider p) async {
   final pdf = pw.Document();
   final font = pw.Font.helvetica();
@@ -509,11 +521,14 @@ Future<Uint8List> _buildAcademicStandard(CVProvider p) async {
         ],
       ),
       pw.SizedBox(height: 20),
+
       if (p.personalInfo.summary.isNotEmpty) ...[
         _acadHeader('PROFILE', fontBold, primary, subtleGray),
         pw.Text(p.personalInfo.summary, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 10, lineSpacing: 1.5)),
         pw.SizedBox(height: 16),
       ],
+
+      // EDUCATION FIRST FOR ACADEMIC/FRESHERS
       if (p.educations.isNotEmpty) ...[
         _acadHeader('EDUCATION', fontBold, primary, subtleGray),
         ...p.educations.map((edu) => pw.Padding(
@@ -529,7 +544,7 @@ Future<Uint8List> _buildAcademicStandard(CVProvider p) async {
                     pw.Text(edu.institution, style: pw.TextStyle(font: fontBold, fontSize: 11)),
                     pw.SizedBox(height: 2),
                     pw.Text('${edu.degree}${edu.field.isNotEmpty ? ' in ${edu.field}' : ''}', style: pw.TextStyle(font: font, fontSize: 10)),
-                    if (edu.grade.isNotEmpty) pw.Text('GPA: ${edu.grade}', style: pw.TextStyle(font: font, fontSize: 10)),
+                    if (edu.grade.isNotEmpty) pw.Text('GPA: ${edu.grade}', style: pw.TextStyle(font: fontBold, fontSize: 10, color: primary)),
                   ],
                 ),
               ),
@@ -539,6 +554,8 @@ Future<Uint8List> _buildAcademicStandard(CVProvider p) async {
         )),
         pw.SizedBox(height: 8),
       ],
+
+      // PROJECTS SECOND
       if (p.projects.isNotEmpty) ...[
         _acadHeader('ACADEMIC & PERSONAL PROJECTS', fontBold, primary, subtleGray),
         ...p.projects.map((proj) => pw.Padding(
@@ -561,6 +578,8 @@ Future<Uint8List> _buildAcademicStandard(CVProvider p) async {
         )),
         pw.SizedBox(height: 8),
       ],
+
+      // EXPERIENCE THIRD
       if (p.workExperiences.isNotEmpty) ...[
         _acadHeader('EXPERIENCE', fontBold, primary, subtleGray),
         ...p.workExperiences.map((exp) => pw.Padding(
@@ -585,18 +604,18 @@ Future<Uint8List> _buildAcademicStandard(CVProvider p) async {
         )),
         pw.SizedBox(height: 8),
       ],
+
       if (p.skills.isNotEmpty) ...[
         _acadHeader('TECHNICAL SKILLS', fontBold, primary, subtleGray),
         pw.Wrap(
-          spacing: 32,
-          runSpacing: 12,
-          children: p.skills.map((s) => pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text(s.name, style: pw.TextStyle(font: fontBold, fontSize: 10, color: primary)),
-              pw.SizedBox(height: 4),
-              _buildSkillMeter(s.level, primary, PdfColors.grey300),
-            ],
+          spacing: 12, runSpacing: 8,
+          children: p.skills.map((s) => pw.Container(
+            padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: pw.BoxDecoration(
+                color: subtleGray,
+                borderRadius: pw.BorderRadius.circular(12)
+            ),
+            child: pw.Text(s.name, style: pw.TextStyle(font: fontBold, fontSize: 9, color: primary)),
           )).toList(),
         ),
       ],
@@ -621,22 +640,28 @@ pw.Widget _acadHeader(String title, pw.Font fontBold, PdfColor primary, PdfColor
     child: pw.Row(children: [pw.Text(title, style: pw.TextStyle(font: fontBold, fontSize: 11, color: primary, letterSpacing: 1.1))])
 );
 
+
+// =============================================================================
+// 4. TECH MINIMALIST (Developer Focus)
+// Prioritizes Skills stack immediately. Clean left-aligned layout.
+// =============================================================================
 Future<Uint8List> _buildTechMinimalist(CVProvider p) async {
   final pdf = pw.Document();
   final font = pw.Font.helvetica();
   final fontBold = pw.Font.helveticaBold();
   const primary = PdfColor.fromInt(0xFF263238);
+  const secondary = PdfColor.fromInt(0xFF546E7A);
 
   pdf.addPage(pw.MultiPage(
     pageFormat: PdfPageFormat.a4,
-    margin: const pw.EdgeInsets.all(40),
+    margin: const pw.EdgeInsets.all(48),
     build: (ctx) => [
       pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(p.personalInfo.fullName, style: pw.TextStyle(font: fontBold, fontSize: 26, color: primary)),
           pw.SizedBox(height: 6),
-          pw.Text(p.personalInfo.jobTitle.toUpperCase(), style: pw.TextStyle(font: font, fontSize: 11, color: PdfColors.grey900, letterSpacing: 1.5)),
+          pw.Text(p.personalInfo.jobTitle.toUpperCase(), style: pw.TextStyle(font: font, fontSize: 11, color: secondary, letterSpacing: 1.5)),
           pw.SizedBox(height: 16),
           pw.Wrap(
             spacing: 16, runSpacing: 8,
@@ -650,42 +675,69 @@ Future<Uint8List> _buildTechMinimalist(CVProvider p) async {
           pw.SizedBox(height: 24),
         ],
       ),
+
       if (p.personalInfo.summary.isNotEmpty) ...[
         _techHeader('PROFILE', fontBold, primary),
         pw.Text(p.personalInfo.summary, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 10, lineSpacing: 1.5)),
         pw.SizedBox(height: 24),
       ],
-      if (p.workExperiences.isNotEmpty) ...[
-        _techHeader('EXPERIENCE', fontBold, primary),
-        ...p.workExperiences.map((exp) => pw.Padding(
-            padding: const pw.EdgeInsets.only(bottom: 16),
-            child: pw.Row(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Container(width: 2, height: 40, color: primary, margin: const pw.EdgeInsets.only(right: 12, top: -2)),
-                  pw.Expanded(
-                      child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(exp.position, style: pw.TextStyle(font: fontBold, fontSize: 11)),
-                            pw.SizedBox(height: 4),
-                            pw.Text('${exp.company}  |  ${exp.startDate} - ${exp.isCurrentJob ? 'Present' : exp.endDate}', style: pw.TextStyle(font: font, fontSize: 9, color: PdfColors.grey700)),
-                            pw.SizedBox(height: 6),
-                            if (exp.description.isNotEmpty)
-                              pw.Text(exp.description, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 10, lineSpacing: 1.4)),
-                          ]
-                      )
-                  )
-                ]
-            )
-        )),
-        pw.SizedBox(height: 8),
+
+      // TECH SKILLS HIGHLIGHTED HIGH UP
+      if (p.skills.isNotEmpty) ...[
+        _techHeader('TECHNICAL EXPERTISE', fontBold, primary),
+        pw.Wrap(
+          spacing: 6, runSpacing: 6,
+          children: p.skills.map((s) => pw.Container(
+            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: pw.BoxDecoration(border: pw.Border.all(color: primary, width: 1.5), borderRadius: pw.BorderRadius.circular(4)),
+            child: pw.Text(s.name, style: pw.TextStyle(font: fontBold, fontSize: 9, color: primary)),
+          )).toList(),
+        ),
+        pw.SizedBox(height: 24),
       ],
+
       pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
+          // Left Column (Experience)
           pw.Expanded(
             flex: 5,
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                if (p.workExperiences.isNotEmpty) ...[
+                  _techHeader('EXPERIENCE', fontBold, primary),
+                  ...p.workExperiences.map((exp) => pw.Padding(
+                      padding: const pw.EdgeInsets.only(bottom: 16),
+                      child: pw.Row(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Container(width: 2, height: 40, color: primary, margin: const pw.EdgeInsets.only(right: 12, top: -2)),
+                            pw.Expanded(
+                                child: pw.Column(
+                                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                    children: [
+                                      pw.Text(exp.position, style: pw.TextStyle(font: fontBold, fontSize: 11)),
+                                      pw.SizedBox(height: 4),
+                                      pw.Text('${exp.company}  |  ${exp.startDate} - ${exp.isCurrentJob ? 'Present' : exp.endDate}', style: pw.TextStyle(font: font, fontSize: 9, color: secondary)),
+                                      pw.SizedBox(height: 6),
+                                      if (exp.description.isNotEmpty)
+                                        pw.Text(exp.description, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 10, lineSpacing: 1.4)),
+                                    ]
+                                )
+                            )
+                          ]
+                      )
+                  )),
+                ],
+              ],
+            ),
+          ),
+          pw.SizedBox(width: 32),
+
+          // Right Column (Projects & Education)
+          pw.Expanded(
+            flex: 4,
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
@@ -698,22 +750,14 @@ Future<Uint8List> _buildTechMinimalist(CVProvider p) async {
                       children: [
                         pw.Text(proj.name, style: pw.TextStyle(font: fontBold, fontSize: 10)),
                         pw.SizedBox(height: 2),
-                        if (proj.technologies.isNotEmpty) pw.Text(proj.technologies, style: pw.TextStyle(font: font, fontSize: 9, color: primary)),
+                        if (proj.technologies.isNotEmpty) pw.Text(proj.technologies, style: pw.TextStyle(font: font, fontSize: 9, color: secondary)),
                         pw.SizedBox(height: 4),
                         if (proj.description.isNotEmpty) pw.Text(proj.description, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 9, lineSpacing: 1.4)),
                       ],
                     ),
                   )),
+                  pw.SizedBox(height: 12),
                 ],
-              ],
-            ),
-          ),
-          pw.SizedBox(width: 32),
-          pw.Expanded(
-            flex: 4,
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
                 if (p.educations.isNotEmpty) ...[
                   _techHeader('EDUCATION', fontBold, primary),
                   ...p.educations.map((edu) => pw.Padding(
@@ -724,22 +768,10 @@ Future<Uint8List> _buildTechMinimalist(CVProvider p) async {
                         pw.Text(edu.degree, style: pw.TextStyle(font: fontBold, fontSize: 10)),
                         pw.SizedBox(height: 2),
                         pw.Text(edu.institution, style: pw.TextStyle(font: font, fontSize: 9)),
-                        pw.Text('${edu.startYear} - ${edu.endYear}', style: pw.TextStyle(font: font, fontSize: 9, color: PdfColors.grey700)),
+                        pw.Text('${edu.startYear} - ${edu.endYear}', style: pw.TextStyle(font: font, fontSize: 9, color: secondary)),
                       ],
                     ),
                   )),
-                  pw.SizedBox(height: 12),
-                ],
-                if (p.skills.isNotEmpty) ...[
-                  _techHeader('SKILLS', fontBold, primary),
-                  pw.Wrap(
-                    spacing: 6, runSpacing: 6,
-                    children: p.skills.map((s) => pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey700), borderRadius: pw.BorderRadius.circular(4)),
-                      child: pw.Text(s.name, style: pw.TextStyle(font: font, fontSize: 9)),
-                    )).toList(),
-                  ),
                 ],
               ],
             ),
@@ -765,6 +797,11 @@ pw.Widget _techHeader(String title, pw.Font fontBold, PdfColor color) => pw.Padd
   child: pw.Text(title, style: pw.TextStyle(font: fontBold, fontSize: 12, color: color, letterSpacing: 1.5)),
 );
 
+
+// =============================================================================
+// 5. MANAGERIAL COMPACT (Density & Experience Focus)
+// 1 Page Layout, Heavy text density, Professional.
+// =============================================================================
 Future<Uint8List> _buildManagerialCompact(CVProvider p) async {
   final pdf = pw.Document();
   final font = pw.Font.helvetica();
@@ -775,7 +812,7 @@ Future<Uint8List> _buildManagerialCompact(CVProvider p) async {
 
   pdf.addPage(pw.MultiPage(
     pageFormat: PdfPageFormat.a4,
-    margin: const pw.EdgeInsets.symmetric(horizontal: 46, vertical: 46),
+    margin: const pw.EdgeInsets.symmetric(horizontal: 40, vertical: 40),
     build: (ctx) => [
       pw.Center(
         child: pw.Column(
@@ -801,102 +838,109 @@ Future<Uint8List> _buildManagerialCompact(CVProvider p) async {
       pw.SizedBox(height: 16),
       pw.Divider(color: primary, thickness: 1.5),
       pw.SizedBox(height: 16),
+
       if (p.personalInfo.summary.isNotEmpty) ...[
-        pw.Text(p.personalInfo.summary, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 10, lineSpacing: 1.5, color: darkText)),
-        pw.SizedBox(height: 18),
+        pw.Text(p.personalInfo.summary, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 10, lineSpacing: 1.4, color: darkText)),
+        pw.SizedBox(height: 16),
       ],
+
       if (p.skills.isNotEmpty || p.languages.isNotEmpty) ...[
         _compactHeader('CORE COMPETENCIES', fontBold, primary),
         if (p.skills.isNotEmpty)
           pw.Padding(
             padding: const pw.EdgeInsets.only(bottom: 6),
             child: pw.RichText(text: pw.TextSpan(children: [
-              pw.TextSpan(text: 'Technical Skills: ', style: pw.TextStyle(font: fontBold, fontSize: 10, color: darkText)),
-              pw.TextSpan(text: p.skills.map((s) => s.name).join(' . '), style: pw.TextStyle(font: font, fontSize: 10, color: darkText)),
+              pw.TextSpan(text: 'Expertise: ', style: pw.TextStyle(font: fontBold, fontSize: 10, color: darkText)),
+              pw.TextSpan(text: p.skills.map((s) => s.name).join(', '), style: pw.TextStyle(font: font, fontSize: 10, color: darkText)),
             ])),
           ),
         if (p.languages.isNotEmpty)
           pw.RichText(text: pw.TextSpan(children: [
             pw.TextSpan(text: 'Languages: ', style: pw.TextStyle(font: fontBold, fontSize: 10, color: darkText)),
-            pw.TextSpan(text: p.languages.join(' . '), style: pw.TextStyle(font: font, fontSize: 10, color: darkText)),
+            pw.TextSpan(text: p.languages.join(', '), style: pw.TextStyle(font: font, fontSize: 10, color: darkText)),
           ])),
-        pw.SizedBox(height: 18),
+        pw.SizedBox(height: 14),
       ],
-      if (p.workExperiences.isNotEmpty) ...[
-        _compactHeader('PROFESSIONAL EXPERIENCE', fontBold, primary),
-        ...p.workExperiences.map((exp) => pw.Padding(
-          padding: const pw.EdgeInsets.only(bottom: 14),
-          child: pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(exp.position, style: pw.TextStyle(font: fontBold, fontSize: 11, color: darkText)),
-                  pw.Text('${exp.startDate} - ${exp.isCurrentJob ? 'Present' : exp.endDate}', style: pw.TextStyle(font: fontBold, fontSize: 10, color: primary)),
+
+      // SPLIT LAYOUT FOR DENSITY (Experience on left, Rest on right)
+      pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Expanded(
+            flex: 6,
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                if (p.workExperiences.isNotEmpty) ...[
+                  _compactHeader('PROFESSIONAL EXPERIENCE', fontBold, primary),
+                  ...p.workExperiences.map((exp) => pw.Padding(
+                    padding: const pw.EdgeInsets.only(bottom: 12),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Row(
+                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                          children: [
+                            pw.Text(exp.position, style: pw.TextStyle(font: fontBold, fontSize: 11, color: darkText)),
+                            pw.Text('${exp.startDate} - ${exp.isCurrentJob ? 'Present' : exp.endDate}', style: pw.TextStyle(font: fontBold, fontSize: 9, color: primary)),
+                          ],
+                        ),
+                        pw.SizedBox(height: 2),
+                        pw.Text(exp.company, style: pw.TextStyle(font: fontItalic, fontSize: 10, color: PdfColors.grey800)),
+                        pw.SizedBox(height: 4),
+                        if (exp.description.isNotEmpty)
+                          pw.Text(exp.description, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 9, lineSpacing: 1.4, color: darkText)),
+                      ],
+                    ),
+                  )),
                 ],
-              ),
-              pw.SizedBox(height: 2),
-              pw.Text(exp.company, style: pw.TextStyle(font: fontItalic, fontSize: 10, color: PdfColors.grey800)),
-              pw.SizedBox(height: 6),
-              if (exp.description.isNotEmpty)
-                pw.Text(exp.description, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 10, lineSpacing: 1.4, color: darkText)),
-            ],
+              ],
+            ),
           ),
-        )),
-        pw.SizedBox(height: 4),
-      ],
-      if (p.projects.isNotEmpty) ...[
-        _compactHeader('SELECTED PROJECTS', fontBold, primary),
-        ...p.projects.map((proj) => pw.Padding(
-          padding: const pw.EdgeInsets.only(bottom: 14),
-          child: pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Row(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text('${proj.name} ', style: pw.TextStyle(font: fontBold, fontSize: 11, color: darkText)),
-                    if (proj.technologies.isNotEmpty) pw.Text('| ${proj.technologies}', style: pw.TextStyle(font: fontItalic, fontSize: 10, color: PdfColors.grey700)),
-                  ]
-              ),
-              pw.SizedBox(height: 4),
-              if (proj.description.isNotEmpty)
-                pw.Text(proj.description, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 10, lineSpacing: 1.4, color: darkText)),
-            ],
-          ),
-        )),
-        pw.SizedBox(height: 4),
-      ],
-      if (p.educations.isNotEmpty) ...[
-        _compactHeader('EDUCATION', fontBold, primary),
-        ...p.educations.map((edu) => pw.Padding(
-          padding: const pw.EdgeInsets.only(bottom: 12),
-          child: pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Expanded(
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text(edu.degree, style: pw.TextStyle(font: fontBold, fontSize: 11, color: darkText)),
-                    pw.SizedBox(height: 2),
-                    pw.Text(edu.institution, style: pw.TextStyle(font: font, fontSize: 10, color: PdfColors.grey800)),
-                  ],
-                ),
-              ),
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.end,
-                children: [
-                  pw.Text('${edu.startYear} - ${edu.endYear}', style: pw.TextStyle(font: fontBold, fontSize: 10, color: primary)),
-                  if (edu.grade.isNotEmpty) pw.Text('GPA: ${edu.grade}', style: pw.TextStyle(font: font, fontSize: 10, color: PdfColors.grey700)),
+          pw.SizedBox(width: 24),
+          pw.Expanded(
+            flex: 4,
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                if (p.projects.isNotEmpty) ...[
+                  _compactHeader('SELECTED PROJECTS', fontBold, primary),
+                  ...p.projects.map((proj) => pw.Padding(
+                    padding: const pw.EdgeInsets.only(bottom: 12),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('${proj.name} ', style: pw.TextStyle(font: fontBold, fontSize: 10, color: darkText)),
+                        if (proj.technologies.isNotEmpty) pw.Text(proj.technologies, style: pw.TextStyle(font: fontItalic, fontSize: 9, color: PdfColors.grey700)),
+                        pw.SizedBox(height: 4),
+                        if (proj.description.isNotEmpty)
+                          pw.Text(proj.description, textAlign: pw.TextAlign.justify, style: pw.TextStyle(font: font, fontSize: 9, lineSpacing: 1.4, color: darkText)),
+                      ],
+                    ),
+                  )),
+                  pw.SizedBox(height: 6),
                 ],
-              ),
-            ],
-          ),
-        )),
-      ],
+                if (p.educations.isNotEmpty) ...[
+                  _compactHeader('EDUCATION', fontBold, primary),
+                  ...p.educations.map((edu) => pw.Padding(
+                    padding: const pw.EdgeInsets.only(bottom: 12),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(edu.degree, style: pw.TextStyle(font: fontBold, fontSize: 10, color: darkText)),
+                        pw.SizedBox(height: 2),
+                        pw.Text(edu.institution, style: pw.TextStyle(font: font, fontSize: 9, color: PdfColors.grey800)),
+                        pw.Text('${edu.startYear} - ${edu.endYear}', style: pw.TextStyle(font: fontBold, fontSize: 9, color: primary)),
+                        if (edu.grade.isNotEmpty) pw.Text('GPA: ${edu.grade}', style: pw.TextStyle(font: font, fontSize: 9, color: PdfColors.grey700)),
+                      ],
+                    ),
+                  )),
+                ],
+              ],
+            ),
+          )
+        ],
+      ),
     ],
   ));
   return pdf.save();
