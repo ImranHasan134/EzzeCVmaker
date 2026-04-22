@@ -1,4 +1,7 @@
-# 📄 EzzeCV — Build Your Career Story
+<h1>
+  <img src="assets/icon/app_icon.png" width="35" style="vertical-align: middle; border-radius: 6px;" />
+  EzzeCV — Build Your Career Story
+</h1>
 
 ![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)
