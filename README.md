@@ -10,10 +10,8 @@
 
 **EzzeCV** is a premium, fully offline CV & resume builder built with Flutter.  
 Create professional, ATS-friendly resumes directly on your device — no internet, no cloud, complete privacy.
----
-
 <h1>
-  <img src="assets/icon/splash.gif" width="35" style="vertical-align: middle; border-radius: 6px;" />
+  <img src="assets/icon/splash.gif" width="250" style="vertical-align: middle; border-radius: 6px;" />
 </h1>
 
 ---
